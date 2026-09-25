@@ -17,7 +17,11 @@ public class TransporteHttp {
     private final RestClient cliente;
 
     public TransporteHttp(OutboxProperties propriedades) {
-        var http = HttpClient.newBuilder().connectTimeout(propriedades.timeout()).build();
+        // HTTP/1.1 explícito: o padrão do JDK tenta upgrade h2c, e o uvicorn descarta o corpo nesse caso.
+        var http = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(propriedades.timeout())
+                .build();
         var fabrica = new JdkClientHttpRequestFactory(http);
         fabrica.setReadTimeout(propriedades.timeout());
         this.cliente = RestClient.builder()
