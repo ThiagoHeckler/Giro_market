@@ -3,6 +3,12 @@ target/
 *.class
 *.log
 
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
 # IDEs
 .idea/
 *.iml

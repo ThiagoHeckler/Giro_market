@@ -1,4 +1,4 @@
-# Um Postgres por serviço, sem FK cruzada. Os serviços em si entram nos próximos passos.
+# Um Postgres por serviço, sem FK cruzada. Os serviços Java entram no compose no Passo 7.
 name: estoque-2-0
 
 services:
@@ -31,6 +31,19 @@ services:
       - mercado-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  tag-worker:
+    build: ./tag-worker
+    environment:
+      # Lida do .env (fora do git). Vazia: o worker usa o classificador por palavras-chave.
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/saude')"]
       interval: 5s
       timeout: 3s
       retries: 10
