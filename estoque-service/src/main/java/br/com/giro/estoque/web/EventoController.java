@@ -1,7 +1,7 @@
 package br.com.giro.estoque.web;
 
 import br.com.giro.estoque.application.AtendimentoReposicao;
-import br.com.giro.estoque.application.contrato.EventoReposicao;
+import br.com.giro.estoque.application.contrato.EventoIntegracao;
 import br.com.giro.estoque.application.contrato.ReposicaoSolicitada;
 import br.com.giro.estoque.infra.outbox.TransporteHttp;
 import jakarta.validation.Validator;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class EventoController {
 
     /** Tipos que o estoque consome. */
-    private static final Map<String, Class<? extends EventoReposicao>> TIPOS_ACEITOS =
+    private static final Map<String, Class<? extends EventoIntegracao>> TIPOS_ACEITOS =
             Map.of("ReposicaoSolicitada", ReposicaoSolicitada.class);
 
     private final AtendimentoReposicao atendimento;
@@ -50,12 +50,12 @@ public class EventoController {
         return ResponseEntity.noContent().build();
     }
 
-    private EventoReposicao decodificar(String tipo, String corpo) {
+    private EventoIntegracao decodificar(String tipo, String corpo) {
         var classe = TIPOS_ACEITOS.get(tipo);
         if (classe == null) {
             throw new EventoInvalidoException("tipo de evento não aceito: " + tipo);
         }
-        EventoReposicao evento;
+        EventoIntegracao evento;
         try {
             evento = json.readValue(corpo, classe);
         } catch (JacksonException e) {

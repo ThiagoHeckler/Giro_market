@@ -1,6 +1,7 @@
 package br.com.giro.estoque;
 
-import br.com.giro.estoque.application.contrato.EventoReposicao;
+import br.com.giro.estoque.application.contrato.EventoIntegracao;
+import br.com.giro.estoque.application.contrato.ProdutoClassificado;
 import br.com.giro.estoque.application.contrato.ReposicaoEnviada;
 import br.com.giro.estoque.application.contrato.ReposicaoNegada;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,9 +30,10 @@ import java.util.Map;
 @Import(TestcontainersConfiguration.class)
 public abstract class IntegracaoTest {
 
-    private static final Map<String, Class<? extends EventoReposicao>> TIPOS = Map.of(
+    private static final Map<String, Class<? extends EventoIntegracao>> TIPOS = Map.of(
             "ReposicaoEnviada", ReposicaoEnviada.class,
-            "ReposicaoNegada", ReposicaoNegada.class);
+            "ReposicaoNegada", ReposicaoNegada.class,
+            "ProdutoClassificado", ProdutoClassificado.class);
 
     @Autowired
     protected JdbcTemplate jdbc;
@@ -52,9 +54,19 @@ public abstract class IntegracaoTest {
         WorkerFalso.reiniciar();
     }
 
-    /** Respostas gravadas na outbox, na ordem, já desserializadas nos contratos. */
-    protected List<EventoReposicao> respostasNaOutbox() {
+    /** Todos os eventos gravados na outbox, na ordem, já desserializados nos contratos. */
+    protected List<EventoIntegracao> eventosNaOutbox() {
         return jdbc.query("SELECT tipo, payload FROM outbox_event ORDER BY criado_em",
                 (linha, _) -> json.readValue(linha.getString("payload"), TIPOS.get(linha.getString("tipo"))));
+    }
+
+    /** Só as respostas de reposição (enviada/negada), na ordem. */
+    protected List<EventoIntegracao> respostasNaOutbox() {
+        return eventosNaOutbox().stream().filter(e -> !(e instanceof ProdutoClassificado)).toList();
+    }
+
+    protected List<ProdutoClassificado> classificacoesNaOutbox() {
+        return eventosNaOutbox().stream()
+                .filter(ProdutoClassificado.class::isInstance).map(ProdutoClassificado.class::cast).toList();
     }
 }

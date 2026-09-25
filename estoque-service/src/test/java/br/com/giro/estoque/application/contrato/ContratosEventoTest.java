@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,5 +62,23 @@ class ContratosEventoTest {
                 .extracting(ConstraintViolation::getPropertyPath)
                 .extracting(Object::toString)
                 .containsExactly("motivo");
+    }
+
+    @Test
+    void produtoClassificadoExigeTagsECategoria() {
+        var evento = new ProdutoClassificado(UUID.randomUUID(), "7894900011517", List.of(), " ", Instant.now());
+
+        assertThat(validator.validate(evento))
+                .extracting(v -> v.getPropertyPath().toString())
+                .containsExactlyInAnyOrder("tags", "categoria");
+    }
+
+    @Test
+    void produtoClassificadoLimitaTamanhoDeCadaTag() {
+        var tagLonga = "x".repeat(31);
+        var evento = new ProdutoClassificado(UUID.randomUUID(), "7894900011517", List.of("bebida", tagLonga),
+                "bebidas", Instant.now());
+
+        assertThat(validator.validate(evento)).hasSize(1);
     }
 }

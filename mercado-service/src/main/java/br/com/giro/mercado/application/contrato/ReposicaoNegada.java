@@ -15,5 +15,5 @@ public record ReposicaoNegada(
         @NotNull UUID correlationId,
         @NotNull @Pattern(regexp = "^([0-9]{8}|[0-9]{12,14})$") String sku,
         @NotNull MotivoNegacao motivo,
-        @NotNull Instant ocorridoEm) implements EventoReposicao {
+        @NotNull Instant ocorridoEm) implements EventoIntegracao {
 }

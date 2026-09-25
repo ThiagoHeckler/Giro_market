@@ -1,6 +1,6 @@
 package br.com.giro.mercado.infra.outbox;
 
-import br.com.giro.mercado.application.contrato.EventoReposicao;
+import br.com.giro.mercado.application.contrato.EventoIntegracao;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +23,7 @@ public class Outbox {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void registrar(EventoReposicao evento) {
+    public void registrar(EventoIntegracao evento) {
         eventos.save(new OutboxEvent(
                 evento.eventId(),
                 evento.getClass().getSimpleName(),

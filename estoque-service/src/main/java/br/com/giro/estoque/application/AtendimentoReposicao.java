@@ -1,7 +1,8 @@
 package br.com.giro.estoque.application;
 
-import br.com.giro.estoque.application.contrato.EventoReposicao;
+import br.com.giro.estoque.application.contrato.EventoIntegracao;
 import br.com.giro.estoque.application.contrato.MotivoNegacao;
+import br.com.giro.estoque.application.contrato.ProdutoClassificado;
 import br.com.giro.estoque.application.contrato.ReposicaoEnviada;
 import br.com.giro.estoque.application.contrato.ReposicaoNegada;
 import br.com.giro.estoque.application.contrato.ReposicaoSolicitada;
@@ -46,7 +47,7 @@ public class AtendimentoReposicao {
     }
 
     @Transactional
-    public void processar(EventoReposicao evento) {
+    public void processar(EventoIntegracao evento) {
         if (!inbox.registrarSeNovo(evento.eventId())) {
             log.info("Evento duplicado ignorado eventId={} tipo={}", evento.eventId(), evento.getClass().getSimpleName());
             return;
@@ -57,6 +58,8 @@ public class AtendimentoReposicao {
                     throw new IllegalArgumentException("estoque não consome ReposicaoEnviada: " + enviada.eventId());
             case ReposicaoNegada negada ->
                     throw new IllegalArgumentException("estoque não consome ReposicaoNegada: " + negada.eventId());
+            case ProdutoClassificado classificado ->
+                    throw new IllegalArgumentException("estoque não consome ProdutoClassificado: " + classificado.eventId());
         }
     }
 

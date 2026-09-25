@@ -20,10 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class ContratosJsonTest extends IntegracaoTest {
 
-    private static final Map<String, Class<? extends EventoReposicao>> TIPOS = Map.of(
+    private static final Map<String, Class<? extends EventoIntegracao>> TIPOS = Map.of(
             "ReposicaoSolicitada", ReposicaoSolicitada.class,
             "ReposicaoEnviada", ReposicaoEnviada.class,
-            "ReposicaoNegada", ReposicaoNegada.class);
+            "ReposicaoNegada", ReposicaoNegada.class,
+            "ProdutoClassificado", ProdutoClassificado.class);
 
     @Autowired
     Validator validator;
@@ -35,7 +36,7 @@ class ContratosJsonTest extends IntegracaoTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"ReposicaoSolicitada", "ReposicaoEnviada", "ReposicaoNegada"})
+    @ValueSource(strings = {"ReposicaoSolicitada", "ReposicaoEnviada", "ReposicaoNegada", "ProdutoClassificado"})
     void fixtureFazIdaEVoltaSemPerderNada(String tipo) throws IOException {
         var original = fixture(tipo);
 

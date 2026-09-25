@@ -1,7 +1,7 @@
 package br.com.giro.mercado.web;
 
 import br.com.giro.mercado.application.ConsumidorReposicao;
-import br.com.giro.mercado.application.contrato.EventoReposicao;
+import br.com.giro.mercado.application.contrato.EventoIntegracao;
 import br.com.giro.mercado.application.contrato.ReposicaoEnviada;
 import br.com.giro.mercado.application.contrato.ReposicaoNegada;
 import br.com.giro.mercado.infra.outbox.TransporteHttp;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 public class EventoController {
 
     /** Tipos que o mercado consome. */
-    private static final Map<String, Class<? extends EventoReposicao>> TIPOS_ACEITOS = Map.of(
+    private static final Map<String, Class<? extends EventoIntegracao>> TIPOS_ACEITOS = Map.of(
             "ReposicaoEnviada", ReposicaoEnviada.class,
             "ReposicaoNegada", ReposicaoNegada.class);
 
@@ -52,12 +52,12 @@ public class EventoController {
         return ResponseEntity.noContent().build();
     }
 
-    private EventoReposicao decodificar(String tipo, String corpo) {
+    private EventoIntegracao decodificar(String tipo, String corpo) {
         var classe = TIPOS_ACEITOS.get(tipo);
         if (classe == null) {
             throw new EventoInvalidoException("tipo de evento não aceito: " + tipo);
         }
-        EventoReposicao evento;
+        EventoIntegracao evento;
         try {
             evento = json.readValue(corpo, classe);
         } catch (JacksonException e) {

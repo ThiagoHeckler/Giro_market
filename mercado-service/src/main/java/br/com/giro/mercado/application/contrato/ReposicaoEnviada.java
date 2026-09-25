@@ -18,5 +18,5 @@ public record ReposicaoEnviada(
         @NotNull @Pattern(regexp = "^([0-9]{8}|[0-9]{12,14})$") String sku,
         @Positive int qtd,
         @NotBlank String lote,
-        @NotNull Instant ocorridoEm) implements EventoReposicao {
+        @NotNull Instant ocorridoEm) implements EventoIntegracao {
 }

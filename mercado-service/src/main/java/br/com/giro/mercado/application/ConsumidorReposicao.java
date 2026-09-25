@@ -1,7 +1,8 @@
 package br.com.giro.mercado.application;
 
-import br.com.giro.mercado.application.contrato.EventoReposicao;
+import br.com.giro.mercado.application.contrato.EventoIntegracao;
 import br.com.giro.mercado.application.contrato.MotivoNegacao;
+import br.com.giro.mercado.application.contrato.ProdutoClassificado;
 import br.com.giro.mercado.application.contrato.ReposicaoEnviada;
 import br.com.giro.mercado.application.contrato.ReposicaoNegada;
 import br.com.giro.mercado.application.contrato.ReposicaoSolicitada;
@@ -42,7 +43,7 @@ public class ConsumidorReposicao {
     }
 
     @Transactional
-    public void processar(EventoReposicao evento) {
+    public void processar(EventoIntegracao evento) {
         if (!inbox.registrarSeNovo(evento.eventId())) {
             log.info("Evento duplicado ignorado eventId={} tipo={}", evento.eventId(), evento.getClass().getSimpleName());
             return;
@@ -52,6 +53,9 @@ public class ConsumidorReposicao {
             case ReposicaoNegada negada -> aplicar(negada);
             case ReposicaoSolicitada solicitada ->
                     throw new IllegalArgumentException("mercado não consome ReposicaoSolicitada: " + solicitada.eventId());
+            case ProdutoClassificado classificado ->
+                    throw new IllegalArgumentException("ProdutoClassificado é do ConsumidorClassificacao: "
+                            + classificado.eventId());
         }
     }
 

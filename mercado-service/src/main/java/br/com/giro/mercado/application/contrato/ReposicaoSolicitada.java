@@ -15,5 +15,5 @@ public record ReposicaoSolicitada(
         @NotNull UUID eventId,
         @NotNull @Pattern(regexp = "^([0-9]{8}|[0-9]{12,14})$") String sku,
         @Positive int qtdFaltante,
-        @NotNull Instant ocorridoEm) implements EventoReposicao {
+        @NotNull Instant ocorridoEm) implements EventoIntegracao {
 }

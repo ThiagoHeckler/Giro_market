@@ -110,7 +110,13 @@ public record ReposicaoEnviada(
 public record ReposicaoNegada(
     UUID eventId, UUID correlationId, String sku,
     String motivo, Instant ocorridoEm) {}   // SEM_SALDO, SKU_DESCONHECIDO
+
+public record ProdutoClassificado(
+    UUID eventId, String sku, List<String> tags,
+    String categoria, Instant ocorridoEm) {} // estoque → mercado; só posicionamento
 ```
+
+Os quatro implementam a interface selada `EventoIntegracao` (`eventId()`, `ocorridoEm()`). `ProdutoClassificado` é publicado pelo estoque na mesma transação que grava as tags; o mercado só aplica uma classificação mais nova que a atual (`classificado_em`), porque eventos podem chegar fora de ordem.
 
 ---
 
