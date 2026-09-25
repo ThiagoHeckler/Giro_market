@@ -15,6 +15,9 @@ spring:
       ddl-auto: validate
   flyway:
     locations: classpath:db/migration
+  mvc:
+    problemdetails:
+      enabled: true
 
 server:
   port: 8080
@@ -32,3 +35,8 @@ outbox:
   tamanho-lote: 50
   timeout: 2s
   backoff-maximo: 5m
+
+estoque:
+  # Consulta síncrona usada só no cadastro de produto (nunca na venda).
+  url: ${ESTOQUE_URL:http://localhost:8081}
+  timeout: 2s

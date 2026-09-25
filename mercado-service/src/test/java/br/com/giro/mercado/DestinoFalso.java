@@ -17,6 +17,9 @@ public final class DestinoFalso {
 
     private static final List<Recebido> RECEBIDOS = new CopyOnWriteArrayList<>();
     private static volatile int status = 204;
+    /** Resposta de GET /produtos/{sku}; {@code null} = produto classificado genérico com o SKU pedido. */
+    private static volatile Integer statusProduto;
+    private static volatile String corpoProduto;
     private static final HttpServer SERVIDOR = iniciar();
 
     private DestinoFalso() {
@@ -30,6 +33,20 @@ public final class DestinoFalso {
                     var corpo = new String(troca.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                     RECEBIDOS.add(new Recebido(troca.getRequestHeaders().getFirst("Evento-Tipo"), corpo));
                     troca.sendResponseHeaders(status, -1);
+                }
+            });
+            servidor.createContext("/produtos/", troca -> {
+                try (troca) {
+                    var sku = troca.getRequestURI().getPath().substring("/produtos/".length());
+                    int codigo = statusProduto == null ? 200 : statusProduto;
+                    var corpo = corpoProduto != null ? corpoProduto : """
+                            {"sku":"%s","descricao":"COCA COLA 2L PET","ncm":"22021000",
+                             "tags":["refrigerante","coca cola"],"categoria":"bebidas","saldoDisponivel":50}"""
+                            .formatted(sku);
+                    var bytes = corpo.getBytes(StandardCharsets.UTF_8);
+                    troca.getResponseHeaders().add("Content-Type", "application/json");
+                    troca.sendResponseHeaders(codigo, bytes.length);
+                    troca.getResponseBody().write(bytes);
                 }
             });
             servidor.start();
@@ -51,8 +68,15 @@ public final class DestinoFalso {
         status = novoStatus;
     }
 
+    public static void responderProdutoCom(int novoStatus, String novoCorpo) {
+        statusProduto = novoStatus;
+        corpoProduto = novoCorpo;
+    }
+
     public static void reiniciar() {
         RECEBIDOS.clear();
         status = 204;
+        statusProduto = null;
+        corpoProduto = null;
     }
 }

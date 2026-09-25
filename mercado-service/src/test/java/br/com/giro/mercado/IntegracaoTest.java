@@ -16,7 +16,7 @@ import java.util.List;
  * Base dos testes de integração: um contexto e um container para todos, banco limpo a cada teste.
  * O agendador da outbox fica desligado; os testes chamam o publicador quando querem.
  */
-@SpringBootTest(properties = "outbox.publicador-habilitado=false")
+@SpringBootTest(properties = {"outbox.publicador-habilitado=false", "estoque.timeout=500ms"})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 public abstract class IntegracaoTest {
@@ -30,6 +30,7 @@ public abstract class IntegracaoTest {
     @DynamicPropertySource
     static void destinoDosEventos(DynamicPropertyRegistry registro) {
         registro.add("outbox.destino", DestinoFalso::url);
+        registro.add("estoque.url", DestinoFalso::url);
     }
 
     @BeforeEach
