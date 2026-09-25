@@ -21,9 +21,17 @@ Detalhes completos em [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ## Rodando
 
+Até o Passo 7 (serviços Java no compose), em desenvolvimento:
+
 ```bash
-docker compose up -d
+docker compose up -d                                   # Postgres do estoque e do mercado + tag-worker
+(cd estoque-service && ./mvnw spring-boot:run)         # :8081
+(cd mercado-service && ./mvnw spring-boot:run)         # :8080
+(cd vitrine-web && npm install && npm run dev)         # :5173, com proxy /api → mercado
+scripts/popular-demo.sh                                # produtos de demonstração
 ```
+
+O tag-worker usa a Groq se `GROQ_API_KEY` estiver no `.env` (fora do git); sem ela, classifica por palavras-chave.
 
 ## Princípios
 
