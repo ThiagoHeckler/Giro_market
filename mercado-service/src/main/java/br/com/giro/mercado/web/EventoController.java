@@ -1,7 +1,9 @@
 package br.com.giro.mercado.web;
 
+import br.com.giro.mercado.application.ConsumidorClassificacao;
 import br.com.giro.mercado.application.ConsumidorReposicao;
 import br.com.giro.mercado.application.contrato.EventoIntegracao;
+import br.com.giro.mercado.application.contrato.ProdutoClassificado;
 import br.com.giro.mercado.application.contrato.ReposicaoEnviada;
 import br.com.giro.mercado.application.contrato.ReposicaoNegada;
 import br.com.giro.mercado.infra.outbox.TransporteHttp;
@@ -33,14 +35,18 @@ public class EventoController {
     /** Tipos que o mercado consome. */
     private static final Map<String, Class<? extends EventoIntegracao>> TIPOS_ACEITOS = Map.of(
             "ReposicaoEnviada", ReposicaoEnviada.class,
-            "ReposicaoNegada", ReposicaoNegada.class);
+            "ReposicaoNegada", ReposicaoNegada.class,
+            "ProdutoClassificado", ProdutoClassificado.class);
 
-    private final ConsumidorReposicao consumidor;
+    private final ConsumidorReposicao consumidorReposicao;
+    private final ConsumidorClassificacao consumidorClassificacao;
     private final JsonMapper json;
     private final Validator validator;
 
-    public EventoController(ConsumidorReposicao consumidor, JsonMapper json, Validator validator) {
-        this.consumidor = consumidor;
+    public EventoController(ConsumidorReposicao consumidorReposicao, ConsumidorClassificacao consumidorClassificacao,
+                            JsonMapper json, Validator validator) {
+        this.consumidorReposicao = consumidorReposicao;
+        this.consumidorClassificacao = consumidorClassificacao;
         this.json = json;
         this.validator = validator;
     }
@@ -48,7 +54,10 @@ public class EventoController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> receber(@RequestHeader(TransporteHttp.HEADER_TIPO) String tipo,
                                         @RequestBody String corpo) {
-        consumidor.processar(decodificar(tipo, corpo));
+        switch (decodificar(tipo, corpo)) {
+            case ProdutoClassificado classificado -> consumidorClassificacao.processar(classificado);
+            case EventoIntegracao reposicao -> consumidorReposicao.processar(reposicao);
+        }
         return ResponseEntity.noContent().build();
     }
 

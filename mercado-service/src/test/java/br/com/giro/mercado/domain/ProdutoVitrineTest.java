@@ -3,6 +3,8 @@ package br.com.giro.mercado.domain;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -81,5 +83,28 @@ class ProdutoVitrineTest {
     void rejeitaMinMaxIncoerente() {
         assertThatThrownBy(() -> produto(10, 0, 20)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> produto(10, 21, 20)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void classificacaoMaisAntigaNaoSobrescreveAMaisNova() {
+        var p = produto(10, 5, 20);
+        var agora = Instant.parse("2026-09-25T12:00:00Z");
+
+        assertThat(p.classificar(List.of("refrigerante"), "bebidas", agora)).isTrue();
+        assertThat(p.classificar(List.of("errada"), "outros", agora.minusSeconds(60))).isFalse();
+
+        assertThat(p.getTags()).contains(List.of("refrigerante"));
+        assertThat(p.getCategoria()).contains("bebidas");
+    }
+
+    @Test
+    void classificacaoNaoMexeEmPrateleiraNemStatus() {
+        var p = produto(3, 5, 20);
+
+        p.classificar(List.of("refrigerante"), "bebidas", Instant.now());
+
+        assertThat(p.getEstoquePrateleira()).isEqualTo(3);
+        assertThat(p.getStatus()).isEqualTo(StatusVitrine.DISPONIVEL);
+        assertThat(p.quantidadeARepor(false)).hasValue(17);
     }
 }

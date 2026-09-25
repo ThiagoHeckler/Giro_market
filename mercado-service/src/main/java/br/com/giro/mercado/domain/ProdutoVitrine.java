@@ -11,6 +11,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,6 +35,13 @@ public class ProdutoVitrine {
     /** Só posicionamento na vitrine; {@code null} enquanto não classificado. */
     @JdbcTypeCode(SqlTypes.JSON)
     private List<String> tags;
+
+    /** Categoria de posicionamento vinda do estoque; {@code null} enquanto não classificado. */
+    @Column(length = 30)
+    private String categoria;
+
+    @Column(name = "classificado_em")
+    private Instant classificadoEm;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal preco;
@@ -123,8 +131,23 @@ public class ProdutoVitrine {
         return OptionalInt.empty();
     }
 
-    public void classificar(List<String> tags) {
-        this.tags = List.copyOf(Objects.requireNonNull(tags, "tags"));
+    /**
+     * Aplica a classificação se ela for mais nova que a atual (eventos podem chegar fora de ordem).
+     *
+     * @return {@code true} se aplicou
+     */
+    public boolean classificar(List<String> tags, String categoria, Instant classificadoEm) {
+        Objects.requireNonNull(classificadoEm, "classificadoEm");
+        if (tags == null || tags.isEmpty() || categoria == null || categoria.isBlank()) {
+            throw new IllegalArgumentException("classificação exige tags e categoria");
+        }
+        if (this.classificadoEm != null && !classificadoEm.isAfter(this.classificadoEm)) {
+            return false;
+        }
+        this.tags = List.copyOf(tags);
+        this.categoria = categoria;
+        this.classificadoEm = classificadoEm;
+        return true;
     }
 
     private static void exigirPositivo(int qtd) {
@@ -143,6 +166,10 @@ public class ProdutoVitrine {
 
     public Optional<List<String>> getTags() {
         return Optional.ofNullable(tags).map(List::copyOf);
+    }
+
+    public Optional<String> getCategoria() {
+        return Optional.ofNullable(categoria);
     }
 
     public BigDecimal getPreco() {

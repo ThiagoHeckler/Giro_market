@@ -111,4 +111,16 @@ class EventoControllerTest extends IntegracaoTest {
                 .hasStatus(HttpStatus.BAD_REQUEST)
                 .bodyText().contains("não aceito");
     }
+
+    @Test
+    void produtoClassificadoPosicionaOProdutoNaVitrine() {
+        produtos.save(new ProdutoVitrine(COCA, "COCA COLA 2L PET", new BigDecimal("9.99"), 10, 5, 20));
+        var classificado = """
+                {"eventId":"3c2b1a09-8f7e-4d6c-9b5a-4e3d2c1b0a9f","sku":"7894900011517",
+                 "tags":["refrigerante","coca cola"],"categoria":"bebidas","ocorridoEm":"2026-09-25T12:00:05Z"}""";
+
+        assertThat(post("ProdutoClassificado", classificado)).hasStatus(HttpStatus.NO_CONTENT);
+
+        assertThat(produtos.findById(COCA).orElseThrow().getCategoria()).contains("bebidas");
+    }
 }
