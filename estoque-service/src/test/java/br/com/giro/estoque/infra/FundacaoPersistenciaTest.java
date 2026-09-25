@@ -53,7 +53,8 @@ class FundacaoPersistenciaTest {
                 "V2__cria_lote.sql",
                 "V3__cria_demanda_reprimida.sql",
                 "V4__cria_outbox_event.sql",
-                "V5__cria_inbox_event.sql");
+                "V5__cria_inbox_event.sql",
+                "V6__adiciona_saldo_por_lote.sql");
     }
 
     @Test

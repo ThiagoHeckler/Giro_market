@@ -30,6 +30,9 @@ public class Lote {
     @Column(nullable = false)
     private int quantidade;
 
+    @Column(name = "quantidade_disponivel", nullable = false)
+    private int quantidadeDisponivel;
+
     private LocalDate validade;
 
     @Column(name = "recebido_em", nullable = false)
@@ -39,7 +42,8 @@ public class Lote {
         // exigido pelo JPA
     }
 
-    public Lote(String sku, String codigoLote, int quantidade, LocalDate validade, Instant recebidoEm) {
+    /** Criado só por {@link ProdutoEstoque#receberLote}, que mantém o saldo do produto em dia. */
+    Lote(String sku, String codigoLote, int quantidade, LocalDate validade, Instant recebidoEm) {
         if (codigoLote == null || codigoLote.isBlank()) {
             throw new IllegalArgumentException("codigoLote é obrigatório");
         }
@@ -49,8 +53,17 @@ public class Lote {
         this.sku = Sku.validar(sku);
         this.codigoLote = codigoLote;
         this.quantidade = quantidade;
+        this.quantidadeDisponivel = quantidade;
         this.validade = validade;
         this.recebidoEm = Objects.requireNonNull(recebidoEm, "recebidoEm");
+    }
+
+    void retirar(int qtd) {
+        if (qtd <= 0 || qtd > quantidadeDisponivel) {
+            throw new IllegalArgumentException(
+                    "retirada inválida do lote %s: %d de %d disponíveis".formatted(codigoLote, qtd, quantidadeDisponivel));
+        }
+        quantidadeDisponivel -= qtd;
     }
 
     public Long getId() {
@@ -67,6 +80,10 @@ public class Lote {
 
     public int getQuantidade() {
         return quantidade;
+    }
+
+    public int getQuantidadeDisponivel() {
+        return quantidadeDisponivel;
     }
 
     public Optional<LocalDate> getValidade() {

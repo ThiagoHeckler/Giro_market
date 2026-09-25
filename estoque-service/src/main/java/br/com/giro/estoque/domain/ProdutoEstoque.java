@@ -8,6 +8,8 @@ import jakarta.persistence.Version;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,6 +52,26 @@ public class ProdutoEstoque {
         this.descricao = exigirTexto(descricao, "descricao");
         this.ncm = validarNcm(ncm);
         this.saldoDisponivel = 0;
+    }
+
+    /** Entrada de lote: o saldo do produto acompanha a soma dos lotes. */
+    public Lote receberLote(String codigoLote, int quantidade, LocalDate validade, Instant recebidoEm) {
+        var lote = new Lote(sku, codigoLote, quantidade, validade, recebidoEm);
+        saldoDisponivel += quantidade;
+        return lote;
+    }
+
+    /** Tira unidades de um lote deste produto para transferir à prateleira. */
+    public void expedir(Lote lote, int qtd) {
+        if (!sku.equals(lote.getSku())) {
+            throw new IllegalArgumentException("lote %s não pertence ao SKU %s".formatted(lote.getCodigoLote(), sku));
+        }
+        if (qtd > saldoDisponivel) {
+            throw new IllegalStateException(
+                    "saldo do SKU %s (%d) menor que a expedição (%d)".formatted(sku, saldoDisponivel, qtd));
+        }
+        lote.retirar(qtd);
+        saldoDisponivel -= qtd;
     }
 
     public void classificar(List<String> tags) {
