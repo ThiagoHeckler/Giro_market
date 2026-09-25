@@ -17,13 +17,16 @@ public class ReclassificacaoTags {
 
     private final ProdutoEstoqueRepository produtos;
     private final ClassificadorTags classificador;
+    private final ClassificacaoDeProduto classificacaoDeProduto;
     private final TransactionTemplate transacao;
     private final TagsProperties propriedades;
 
     public ReclassificacaoTags(ProdutoEstoqueRepository produtos, ClassificadorTags classificador,
-                               TransactionTemplate transacao, TagsProperties propriedades) {
+                               ClassificacaoDeProduto classificacaoDeProduto, TransactionTemplate transacao,
+                               TagsProperties propriedades) {
         this.produtos = produtos;
         this.classificador = classificador;
+        this.classificacaoDeProduto = classificacaoDeProduto;
         this.transacao = transacao;
         this.propriedades = propriedades;
     }
@@ -41,7 +44,7 @@ public class ReclassificacaoTags {
             boolean aplicou = Boolean.TRUE.equals(transacao.execute(_ -> produtos.buscarParaAtualizar(pendente.getSku())
                     .filter(p -> p.getTags().isEmpty())
                     .map(p -> {
-                        p.classificar(c.tags(), c.categoria());
+                        classificacaoDeProduto.aplicar(p, c);
                         return true;
                     })
                     .orElse(false)));

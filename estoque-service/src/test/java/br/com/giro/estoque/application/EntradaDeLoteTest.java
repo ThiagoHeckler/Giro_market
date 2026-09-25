@@ -53,6 +53,11 @@ class EntradaDeLoteTest extends IntegracaoTest {
         assertThat(registrado.classificado()).isTrue();
         assertThat(produto().getTags()).contains(List.of("refrigerante", "coca cola", "2l"));
         assertThat(produto().getCategoria()).contains("bebidas");
+        assertThat(classificacoesNaOutbox()).singleElement().satisfies(c -> {
+            assertThat(c.sku()).isEqualTo(COCA);
+            assertThat(c.tags()).containsExactly("refrigerante", "coca cola", "2l");
+            assertThat(c.categoria()).isEqualTo("bebidas");
+        });
     }
 
     @Test
@@ -64,6 +69,7 @@ class EntradaDeLoteTest extends IntegracaoTest {
         assertThat(registrado.saldoDisponivel()).isEqualTo(50);
         assertThat(registrado.classificado()).isFalse();
         assertThat(produto().getTags()).isEmpty();
+        assertThat(classificacoesNaOutbox()).isEmpty();
     }
 
     @Test
@@ -84,6 +90,7 @@ class EntradaDeLoteTest extends IntegracaoTest {
         entradaDeLote.registrar(lote("L2", 30));
 
         assertThat(WorkerFalso.chamadas()).isOne();
+        assertThat(classificacoesNaOutbox()).hasSize(1);
         assertThat(produto().getSaldoDisponivel()).isEqualTo(80);
     }
 

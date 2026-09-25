@@ -28,17 +28,20 @@ public class EntradaDeLote {
     private final LoteRepository lotes;
     private final DemandaReprimidaRepository demandas;
     private final Expedicao expedicao;
+    private final ClassificacaoDeProduto classificacaoDeProduto;
     private final ClassificadorTags classificador;
     private final TransactionTemplate transacao;
     private final Clock relogio;
 
     public EntradaDeLote(ProdutoEstoqueRepository produtos, LoteRepository lotes,
                          DemandaReprimidaRepository demandas, Expedicao expedicao,
-                         ClassificadorTags classificador, TransactionTemplate transacao, Clock relogio) {
+                         ClassificacaoDeProduto classificacaoDeProduto, ClassificadorTags classificador,
+                         TransactionTemplate transacao, Clock relogio) {
         this.produtos = produtos;
         this.lotes = lotes;
         this.demandas = demandas;
         this.expedicao = expedicao;
+        this.classificacaoDeProduto = classificacaoDeProduto;
         this.classificador = classificador;
         this.transacao = transacao;
         this.relogio = relogio;
@@ -63,7 +66,7 @@ public class EntradaDeLote {
         var produto = produtos.buscarParaAtualizar(entrada.sku())
                 .orElseGet(() -> produtos.save(new ProdutoEstoque(entrada.sku(), entrada.descricao(), entrada.ncm())));
         if (produto.getTags().isEmpty()) {
-            classificacao.ifPresent(c -> produto.classificar(c.tags(), c.categoria()));
+            classificacao.ifPresent(c -> classificacaoDeProduto.aplicar(produto, c));
         }
 
         var lote = lotes.save(produto.receberLote(entrada.codigoLote(), entrada.quantidade(), entrada.validade(),

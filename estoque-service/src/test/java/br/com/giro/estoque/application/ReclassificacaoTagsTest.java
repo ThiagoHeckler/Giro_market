@@ -24,6 +24,8 @@ class ReclassificacaoTagsTest extends IntegracaoTest {
         assertThat(reclassificacao.reclassificarPendentes()).isOne();
 
         assertThat(produtos.findById("7894900011517").orElseThrow().getCategoria()).contains("bebidas");
+        assertThat(classificacoesNaOutbox()).singleElement()
+                .satisfies(c -> assertThat(c.sku()).isEqualTo("7894900011517"));
         assertThat(reclassificacao.reclassificarPendentes()).isZero();   // nada mais pendente
     }
 
@@ -36,5 +38,6 @@ class ReclassificacaoTagsTest extends IntegracaoTest {
         assertThat(reclassificacao.reclassificarPendentes()).isZero();
 
         assertThat(WorkerFalso.chamadas()).isOne();
+        assertThat(classificacoesNaOutbox()).isEmpty();
     }
 }
