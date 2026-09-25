@@ -1,4 +1,4 @@
-# Passo 1: só o Postgres do estoque. Os demais serviços entram nos próximos passos.
+# Um Postgres por serviço, sem FK cruzada. Os serviços em si entram nos próximos passos.
 name: estoque-2-0
 
 services:
@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${ESTOQUE_DB_USER:-estoque}
       POSTGRES_PASSWORD: ${ESTOQUE_DB_PASSWORD:-estoque}
     ports:
-      # 5433 no host: a 5432 fica para o Postgres do mercado.
+      # Portas fora da 5432 para não colidir com um Postgres local.
       - "5433:5432"
     volumes:
       - estoque-db-data:/var/lib/postgresql/data
@@ -19,5 +19,22 @@ services:
       timeout: 3s
       retries: 10
 
+  mercado-db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: mercado
+      POSTGRES_USER: ${MERCADO_DB_USER:-mercado}
+      POSTGRES_PASSWORD: ${MERCADO_DB_PASSWORD:-mercado}
+    ports:
+      - "5434:5432"
+    volumes:
+      - mercado-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   estoque-db-data:
+  mercado-db-data:

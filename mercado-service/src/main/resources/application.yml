@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: mercado-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${MERCADO_DB_URL:jdbc:postgresql://localhost:5434/mercado}
+    username: ${MERCADO_DB_USER:mercado}
+    password: ${MERCADO_DB_PASSWORD:mercado}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema é responsabilidade exclusiva do Flyway; o Hibernate só confere.
+      ddl-auto: validate
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+mercado:
+  reserva:
+    # Tempo que o item fica reservado entre o checkout e a confirmação do pagamento.
+    ttl: 15m
