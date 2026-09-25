@@ -1,6 +1,6 @@
 package br.com.giro.estoque.infra;
 
-import br.com.giro.estoque.TestcontainersConfiguration;
+import br.com.giro.estoque.IntegracaoTest;
 import br.com.giro.estoque.domain.ProdutoEstoque;
 import br.com.giro.estoque.infra.inbox.InboxEvent;
 import br.com.giro.estoque.infra.inbox.InboxEventRepository;
@@ -10,10 +10,7 @@ import br.com.giro.estoque.infra.outbox.StatusOutbox;
 import br.com.giro.estoque.infra.persistencia.ProdutoEstoqueRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -27,12 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Prova que a fundação está de pé: o Flyway cria o schema num Postgres limpo,
  * o Hibernate o valida (ddl-auto=validate) e as entidades fazem o ida-e-volta no banco.
  */
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
-class FundacaoPersistenciaTest {
-
-    @Autowired
-    JdbcTemplate jdbc;
+class FundacaoPersistenciaTest extends IntegracaoTest {
 
     @Autowired
     ProdutoEstoqueRepository produtos;
@@ -54,7 +46,8 @@ class FundacaoPersistenciaTest {
                 "V3__cria_demanda_reprimida.sql",
                 "V4__cria_outbox_event.sql",
                 "V5__cria_inbox_event.sql",
-                "V6__adiciona_saldo_por_lote.sql");
+                "V6__adiciona_saldo_por_lote.sql",
+                "V7__adiciona_controle_de_envio_ao_outbox.sql");
     }
 
     @Test

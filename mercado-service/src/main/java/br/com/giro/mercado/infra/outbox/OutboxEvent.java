@@ -15,6 +15,7 @@ import org.springframework.data.domain.Persistable;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -24,6 +25,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "outbox_event")
 public class OutboxEvent implements Persistable<UUID> {
+
+    private static final int TAMANHO_MAXIMO_ERRO = 500;
 
     @Id
     private UUID id;
@@ -42,6 +45,18 @@ public class OutboxEvent implements Persistable<UUID> {
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm;
 
+    @Column(nullable = false)
+    private int tentativas;
+
+    @Column(name = "proxima_tentativa_em", nullable = false)
+    private Instant proximaTentativaEm;
+
+    @Column(name = "ultimo_erro", length = TAMANHO_MAXIMO_ERRO)
+    private String ultimoErro;
+
+    @Column(name = "enviado_em")
+    private Instant enviadoEm;
+
     /** Id é atribuído pela aplicação; sem isto o Spring Data faria merge (SELECT + INSERT). */
     @Transient
     private boolean novo = true;
@@ -55,11 +70,24 @@ public class OutboxEvent implements Persistable<UUID> {
         this.tipo = Objects.requireNonNull(tipo, "tipo");
         this.payload = Objects.requireNonNull(payloadJson, "payload");
         this.criadoEm = Objects.requireNonNull(criadoEm, "criadoEm");
+        this.proximaTentativaEm = criadoEm;
         this.status = StatusOutbox.PENDING;
     }
 
-    public void marcarEnviado() {
+    public void marcarEnviado(Instant quando) {
         this.status = StatusOutbox.SENT;
+        this.enviadoEm = quando;
+        this.tentativas++;
+        this.ultimoErro = null;
+    }
+
+    /** Entrega falhou: continua PENDING e só volta ao polling depois de {@code quando}. */
+    public void agendarNovaTentativa(String erro, Instant quando) {
+        this.tentativas++;
+        this.proximaTentativaEm = quando;
+        this.ultimoErro = erro == null || erro.length() <= TAMANHO_MAXIMO_ERRO
+                ? erro
+                : erro.substring(0, TAMANHO_MAXIMO_ERRO);
     }
 
     @PostLoad
@@ -92,5 +120,21 @@ public class OutboxEvent implements Persistable<UUID> {
 
     public Instant getCriadoEm() {
         return criadoEm;
+    }
+
+    public int getTentativas() {
+        return tentativas;
+    }
+
+    public Instant getProximaTentativaEm() {
+        return proximaTentativaEm;
+    }
+
+    public Optional<String> getUltimoErro() {
+        return Optional.ofNullable(ultimoErro);
+    }
+
+    public Optional<Instant> getEnviadoEm() {
+        return Optional.ofNullable(enviadoEm);
     }
 }

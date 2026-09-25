@@ -18,3 +18,12 @@ spring:
 
 server:
   port: 8081
+
+outbox:
+  # Respostas de reposição vão para o mercado.
+  destino: ${MERCADO_EVENTOS_URL:http://localhost:8080}
+  publicador-habilitado: true
+  intervalo: 1s
+  tamanho-lote: 50
+  timeout: 2s
+  backoff-maximo: 5m

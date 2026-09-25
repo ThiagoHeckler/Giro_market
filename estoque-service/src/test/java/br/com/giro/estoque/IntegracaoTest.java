@@ -1,5 +1,8 @@
-package br.com.giro.mercado;
+package br.com.giro.estoque;
 
+import br.com.giro.estoque.application.contrato.EventoReposicao;
+import br.com.giro.estoque.application.contrato.ReposicaoEnviada;
+import br.com.giro.estoque.application.contrato.ReposicaoNegada;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,6 +14,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Base dos testes de integração: um contexto e um container para todos, banco limpo a cada teste.
@@ -20,6 +24,10 @@ import java.util.List;
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 public abstract class IntegracaoTest {
+
+    private static final Map<String, Class<? extends EventoReposicao>> TIPOS = Map.of(
+            "ReposicaoEnviada", ReposicaoEnviada.class,
+            "ReposicaoNegada", ReposicaoNegada.class);
 
     @Autowired
     protected JdbcTemplate jdbc;
@@ -34,19 +42,13 @@ public abstract class IntegracaoTest {
 
     @BeforeEach
     void limpaBanco() {
-        jdbc.execute("""
-                TRUNCATE produto_vitrine, pedido, item_pedido, reserva,
-                         solicitacao_reposicao, outbox_event, inbox_event CASCADE
-                """);
+        jdbc.execute("TRUNCATE produto_estoque, lote, demanda_reprimida, outbox_event, inbox_event CASCADE");
         DestinoFalso.reiniciar();
     }
 
-    /** Valores de {@code qtdFaltante} das ReposicaoSolicitada gravadas na outbox para o SKU. */
-    protected List<Integer> reposicoesSolicitadas(String sku) {
-        return jdbc.queryForList("""
-                SELECT (payload ->> 'qtdFaltante')::int FROM outbox_event
-                WHERE tipo = 'ReposicaoSolicitada' AND payload ->> 'sku' = ?
-                ORDER BY criado_em
-                """, Integer.class, sku);
+    /** Respostas gravadas na outbox, na ordem, já desserializadas nos contratos. */
+    protected List<EventoReposicao> respostasNaOutbox() {
+        return jdbc.query("SELECT tipo, payload FROM outbox_event ORDER BY criado_em",
+                (linha, _) -> json.readValue(linha.getString("payload"), TIPOS.get(linha.getString("tipo"))));
     }
 }

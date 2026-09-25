@@ -23,3 +23,12 @@ mercado:
   reserva:
     # Tempo que o item fica reservado entre o checkout e a confirmação do pagamento.
     ttl: 15m
+
+outbox:
+  # Pedidos de reposição vão para o estoque.
+  destino: ${ESTOQUE_EVENTOS_URL:http://localhost:8081}
+  publicador-habilitado: true
+  intervalo: 1s
+  tamanho-lote: 50
+  timeout: 2s
+  backoff-maximo: 5m

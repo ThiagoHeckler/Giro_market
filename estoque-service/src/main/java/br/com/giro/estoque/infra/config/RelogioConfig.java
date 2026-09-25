@@ -1,4 +1,4 @@
-package br.com.giro.mercado.infra.config;
+package br.com.giro.estoque.infra.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

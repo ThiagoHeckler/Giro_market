@@ -1,6 +1,6 @@
-package br.com.giro.mercado.infra.outbox;
+package br.com.giro.estoque.infra.outbox;
 
-import br.com.giro.mercado.application.contrato.EventoReposicao;
+import br.com.giro.estoque.application.contrato.EventoReposicao;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
