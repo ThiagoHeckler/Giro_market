@@ -18,9 +18,13 @@ import java.util.Map;
 
 /**
  * Base dos testes de integração: um contexto e um container para todos, banco limpo a cada teste.
- * O agendador da outbox fica desligado; os testes chamam o publicador quando querem.
+ * Agendadores desligados (os testes chamam os jobs quando querem); worker de tags e destino dos
+ * eventos são servidores HTTP falsos.
  */
-@SpringBootTest(properties = "outbox.publicador-habilitado=false")
+@SpringBootTest(properties = {
+        "outbox.publicador-habilitado=false",
+        "tags.reclassificacao-habilitada=false",
+        "tags.timeout=500ms"})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 public abstract class IntegracaoTest {
@@ -38,12 +42,14 @@ public abstract class IntegracaoTest {
     @DynamicPropertySource
     static void destinoDosEventos(DynamicPropertyRegistry registro) {
         registro.add("outbox.destino", DestinoFalso::url);
+        registro.add("tags.worker-url", WorkerFalso::url);
     }
 
     @BeforeEach
     void limpaBanco() {
         jdbc.execute("TRUNCATE produto_estoque, lote, demanda_reprimida, outbox_event, inbox_event CASCADE");
         DestinoFalso.reiniciar();
+        WorkerFalso.reiniciar();
     }
 
     /** Respostas gravadas na outbox, na ordem, já desserializadas nos contratos. */

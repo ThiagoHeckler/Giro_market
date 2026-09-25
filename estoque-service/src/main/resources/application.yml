@@ -27,3 +27,11 @@ outbox:
   tamanho-lote: 50
   timeout: 2s
   backoff-maximo: 5m
+
+tags:
+  worker-url: ${TAG_WORKER_URL:http://localhost:8000}
+  # Curto de propósito: a entrada de lote nunca espera pelo LLM mais que isso.
+  timeout: 2s
+  reclassificacao-habilitada: true
+  intervalo-reclassificacao: 5m
+  lote-reclassificacao: 20

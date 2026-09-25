@@ -47,13 +47,14 @@ class FundacaoPersistenciaTest extends IntegracaoTest {
                 "V4__cria_outbox_event.sql",
                 "V5__cria_inbox_event.sql",
                 "V6__adiciona_saldo_por_lote.sql",
-                "V7__adiciona_controle_de_envio_ao_outbox.sql");
+                "V7__adiciona_controle_de_envio_ao_outbox.sql",
+                "V8__adiciona_categoria_ao_produto.sql");
     }
 
     @Test
     void gravaELeProdutoEstoque() {
         var produto = new ProdutoEstoque("7894900011517", "COCA COLA 2L PET", "22021000");
-        produto.classificar(List.of("bebida", "refrigerante", "2l"));
+        produto.classificar(List.of("bebida", "refrigerante", "2l"), "bebidas");
 
         produtos.save(produto);
 
@@ -63,6 +64,7 @@ class FundacaoPersistenciaTest extends IntegracaoTest {
         assertThat(lido.getNcm()).isEqualTo("22021000");
         assertThat(lido.getSaldoDisponivel()).isZero();
         assertThat(lido.getTags()).contains(List.of("bebida", "refrigerante", "2l"));
+        assertThat(lido.getCategoria()).contains("bebidas");
     }
 
     @Test

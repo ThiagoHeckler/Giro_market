@@ -11,7 +11,6 @@ import org.hibernate.type.SqlTypes;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -36,6 +35,10 @@ public class ProdutoEstoque {
     /** {@code null} enquanto o tag-worker não classificou o produto. */
     @JdbcTypeCode(SqlTypes.JSON)
     private List<String> tags;
+
+    /** Categoria sugerida pelo tag-worker; {@code null} enquanto não classificado. */
+    @Column(length = 30)
+    private String categoria;
 
     @Column(name = "saldo_disponivel", nullable = false)
     private int saldoDisponivel;
@@ -74,8 +77,13 @@ public class ProdutoEstoque {
         saldoDisponivel -= qtd;
     }
 
-    public void classificar(List<String> tags) {
-        this.tags = List.copyOf(Objects.requireNonNull(tags, "tags"));
+    /** Aplica a classificação do tag-worker. Só afeta posicionamento — nunca identidade nem reposição. */
+    public void classificar(List<String> tags, String categoria) {
+        if (tags == null || tags.isEmpty()) {
+            throw new IllegalArgumentException("classificação sem tags");
+        }
+        this.tags = List.copyOf(tags);
+        this.categoria = exigirTexto(categoria, "categoria");
     }
 
     private static String validarNcm(String ncm) {
@@ -106,6 +114,10 @@ public class ProdutoEstoque {
 
     public Optional<List<String>> getTags() {
         return Optional.ofNullable(tags).map(List::copyOf);
+    }
+
+    public Optional<String> getCategoria() {
+        return Optional.ofNullable(categoria);
     }
 
     public int getSaldoDisponivel() {
