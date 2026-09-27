@@ -14,10 +14,10 @@ Detalhes completos em [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 | Serviço | Stack | Porta |
 |---|---|---|
-| `mercado-service` | Java 25 + Spring Boot 4 | 8080 |
-| `estoque-service` | Java 25 + Spring Boot 4 | 8081 |
-| `tag-worker` | Python 3.12 + FastAPI | 8000 |
-| `vitrine-web` | React + Vite | 5173 |
+| `mercado-service` | Java 25 + Spring Boot 4 | 18080 |
+| `estoque-service` | Java 25 + Spring Boot 4 | 18081 |
+| `tag-worker` | Python 3.12 + FastAPI | 18000 |
+| `vitrine-web` | React + Vite | 15173 |
 
 ## Rodando
 
@@ -25,9 +25,9 @@ Até o Passo 7 (serviços Java no compose), em desenvolvimento:
 
 ```bash
 docker compose up -d                                   # Postgres do estoque e do mercado + tag-worker
-(cd estoque-service && ./mvnw spring-boot:run)         # :8081
-(cd mercado-service && ./mvnw spring-boot:run)         # :8080
-(cd vitrine-web && npm install && npm run dev)         # :5173, com proxy /api → mercado
+(cd estoque-service && ./mvnw spring-boot:run)         # :18081
+(cd mercado-service && ./mvnw spring-boot:run)         # :18080
+(cd vitrine-web && npm install && npm run dev)         # :15173, com proxy /api → mercado
 scripts/popular-demo.sh                                # produtos de demonstração
 ```
 

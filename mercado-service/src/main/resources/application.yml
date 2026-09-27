@@ -5,7 +5,7 @@ spring:
     virtual:
       enabled: true
   datasource:
-    url: ${MERCADO_DB_URL:jdbc:postgresql://localhost:5434/mercado}
+    url: ${MERCADO_DB_URL:jdbc:postgresql://localhost:15434/mercado}
     username: ${MERCADO_DB_USER:mercado}
     password: ${MERCADO_DB_PASSWORD:mercado}
   jpa:
@@ -20,7 +20,7 @@ spring:
       enabled: true
 
 server:
-  port: 8080
+  port: ${MERCADO_PORTA:18080}
 
 mercado:
   reserva:
@@ -29,7 +29,7 @@ mercado:
 
 outbox:
   # Pedidos de reposição vão para o estoque.
-  destino: ${ESTOQUE_EVENTOS_URL:http://localhost:8081}
+  destino: ${ESTOQUE_EVENTOS_URL:http://localhost:18081}
   publicador-habilitado: true
   intervalo: 1s
   tamanho-lote: 50
@@ -38,5 +38,5 @@ outbox:
 
 estoque:
   # Consulta síncrona usada só no cadastro de produto (nunca na venda).
-  url: ${ESTOQUE_URL:http://localhost:8081}
+  url: ${ESTOQUE_URL:http://localhost:18081}
   timeout: 2s

@@ -7,8 +7,8 @@
 # "Esgotado" e fica uma demanda reprimida — dê entrada num lote novo e veja voltar sozinho.
 set -euo pipefail
 
-ESTOQUE=${ESTOQUE_URL:-http://localhost:8081}
-MERCADO=${MERCADO_URL:-http://localhost:8080}
+ESTOQUE=${ESTOQUE_URL:-http://localhost:18081}
+MERCADO=${MERCADO_URL:-http://localhost:18080}
 VALIDADE=$(date -d '+120 days' +%F)
 VENCIDO=$(date -d '-1 day' +%F)
 

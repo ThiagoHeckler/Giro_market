@@ -59,13 +59,13 @@ Mensagens em português, no imperativo (`Adiciona outbox no mercado-service`). U
 
 ## Como rodar
 
-Até o Passo 7, o compose sobe só a infraestrutura (Postgres do estoque em **5433**, do mercado em **5434** — a 5432 costuma estar ocupada por um Postgres local — e o tag-worker em 8000). Os serviços rodam fora dele:
+Até o Passo 7, o compose sobe só a infraestrutura (Postgres do estoque em **15433**, do mercado em **15434** e o tag-worker em 18000 — portas altas para não colidir com outros projetos locais; todas ajustáveis por variável no `.env`). Os serviços rodam fora dele:
 
 ```bash
 docker compose up -d
-(cd estoque-service && ./mvnw spring-boot:run)     # http://localhost:8081
-(cd mercado-service && ./mvnw spring-boot:run)     # http://localhost:8080
-(cd vitrine-web && npm install && npm run dev)     # http://localhost:5173 (proxy /api → mercado)
+(cd estoque-service && ./mvnw spring-boot:run)     # http://localhost:18081
+(cd mercado-service && ./mvnw spring-boot:run)     # http://localhost:18080
+(cd vitrine-web && npm install && npm run dev)     # http://localhost:15173 (proxy /api → mercado)
 scripts/popular-demo.sh
 ```
 

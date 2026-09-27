@@ -5,7 +5,7 @@ spring:
     virtual:
       enabled: true
   datasource:
-    url: ${ESTOQUE_DB_URL:jdbc:postgresql://localhost:5433/estoque}
+    url: ${ESTOQUE_DB_URL:jdbc:postgresql://localhost:15433/estoque}
     username: ${ESTOQUE_DB_USER:estoque}
     password: ${ESTOQUE_DB_PASSWORD:estoque}
   jpa:
@@ -17,11 +17,11 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8081
+  port: ${ESTOQUE_PORTA:18081}
 
 outbox:
   # Respostas de reposição vão para o mercado.
-  destino: ${MERCADO_EVENTOS_URL:http://localhost:8080}
+  destino: ${MERCADO_EVENTOS_URL:http://localhost:18080}
   publicador-habilitado: true
   intervalo: 1s
   tamanho-lote: 50
@@ -29,7 +29,7 @@ outbox:
   backoff-maximo: 5m
 
 tags:
-  worker-url: ${TAG_WORKER_URL:http://localhost:8000}
+  worker-url: ${TAG_WORKER_URL:http://localhost:18000}
   # Curto de propósito: a entrada de lote nunca espera pelo LLM mais que isso.
   timeout: 2s
   reclassificacao-habilitada: true

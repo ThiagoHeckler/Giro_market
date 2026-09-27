@@ -9,8 +9,8 @@ services:
       POSTGRES_USER: ${ESTOQUE_DB_USER:-estoque}
       POSTGRES_PASSWORD: ${ESTOQUE_DB_PASSWORD:-estoque}
     ports:
-      # Portas fora da 5432 para não colidir com um Postgres local.
-      - "5433:5432"
+      # Portas altas no host para não colidir com Postgres/serviços locais; ajuste pelo .env.
+      - "${ESTOQUE_DB_PORTA:-15433}:5432"
     volumes:
       - estoque-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -26,7 +26,7 @@ services:
       POSTGRES_USER: ${MERCADO_DB_USER:-mercado}
       POSTGRES_PASSWORD: ${MERCADO_DB_PASSWORD:-mercado}
     ports:
-      - "5434:5432"
+      - "${MERCADO_DB_PORTA:-15434}:5432"
     volumes:
       - mercado-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -41,7 +41,7 @@ services:
       # Lida do .env (fora do git). Vazia: o worker usa o classificador por palavras-chave.
       GROQ_API_KEY: ${GROQ_API_KEY:-}
     ports:
-      - "8000:8000"
+      - "${TAG_WORKER_PORTA:-18000}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/saude')"]
       interval: 5s

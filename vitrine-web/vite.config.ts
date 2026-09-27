@@ -5,11 +5,12 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173,
+    port: Number(process.env.VITRINE_PORTA ?? 15173),
+    strictPort: true,
     // Em dev o Vite faz proxy para o mercado: mesma origem no navegador, sem CORS.
     proxy: {
       "/api": {
-        target: process.env.MERCADO_URL ?? "http://localhost:8080",
+        target: process.env.MERCADO_URL ?? "http://localhost:18080",
         rewrite: (caminho) => caminho.replace(/^\/api/, ""),
       },
     },
