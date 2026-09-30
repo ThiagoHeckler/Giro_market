@@ -17,6 +17,18 @@ body {
   font-size: var(--type-body-size);
   line-height: var(--type-body-line);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a,
+button,
+input {
+  touch-action: manipulation;
+}
+
+/* Âncoras da lateral: a seção não encosta na borda ao pular. */
+[id] {
+  scroll-margin-top: var(--space-6);
 }
 
 a {
@@ -50,6 +62,7 @@ input {
   font-family: var(--type-code-family);
   font-size: var(--type-code-size);
   font-weight: var(--type-code-weight);
+  font-variant-numeric: tabular-nums;
 }
 
 .pular-para-conteudo {
@@ -131,9 +144,23 @@ input {
   text-decoration: none;
 }
 
+.lateral__link svg {
+  flex-shrink: 0;
+  color: var(--color-ink-muted);
+}
+
 .lateral__link:hover {
   background: var(--color-brand-2-tint);
   color: var(--color-brand-2-strong);
+}
+
+.lateral__link:hover svg {
+  color: inherit;
+}
+
+.lateral__vitrine:hover {
+  color: var(--color-brand-2-strong);
+  text-decoration: underline;
 }
 
 .lateral__vitrine {
@@ -210,6 +237,7 @@ input {
 
 .kpi__valor {
   margin: 0;
+  font-variant-numeric: tabular-nums;
   font-family: var(--type-code-family);
   font-size: var(--type-display-size);
   line-height: 1.1;
@@ -284,7 +312,17 @@ input {
   border-radius: var(--radius-md);
 }
 
-.campo input:invalid:not(:placeholder-shown):not(:focus) {
+.campo input:hover {
+  border-color: color-mix(in srgb, var(--color-brand-2) 40%, var(--color-border));
+}
+
+.campo input:focus-visible {
+  border-color: var(--color-focus-ring);
+  outline-offset: 0;
+}
+
+/* :user-invalid só acende depois que o operador mexeu no campo — campo vazio ao abrir não é erro. */
+.campo input:user-invalid:not(:focus) {
   border-color: var(--color-danger);
 }
 
@@ -362,11 +400,13 @@ input {
 }
 
 .aviso--ok {
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, var(--color-surface-raised));
   background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface-raised));
   color: color-mix(in srgb, var(--color-success) 65%, var(--color-ink));
 }
 
 .aviso--erro {
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, var(--color-surface-raised));
   background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface-raised));
   color: color-mix(in srgb, var(--color-danger) 72%, var(--color-ink));
 }
@@ -417,6 +457,10 @@ input {
 
 .tabela tbody tr:last-child td {
   border-bottom: none;
+}
+
+.tabela tbody tr:hover td {
+  background: color-mix(in srgb, var(--color-surface-sunken) 60%, var(--color-surface-raised));
 }
 
 .tabela__numero {
@@ -473,6 +517,22 @@ input {
   color: color-mix(in srgb, var(--color-danger) 72%, var(--color-ink));
 }
 
+/* ---- Movimento reduzido ---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 /* ---- Telas estreitas ------------------------------------------------------------------- */
 
 @media (max-width: 1100px) {
@@ -510,12 +570,26 @@ input {
     padding: 0;
   }
 
+  /* A navegação vira uma faixa rolável sob a marca, em vez de sumir. */
   .lateral__nav {
-    display: none;
+    order: 3;
+    flex-basis: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .lateral__link {
+    flex-shrink: 0;
   }
 
   .lateral__vitrine {
     margin: 0 0 0 auto;
+  }
+
+  /* 16px ou mais: abaixo disso o Safari do iOS dá zoom ao focar. */
+  .campo input {
+    font-size: 16px;
   }
 
   .topo,
@@ -523,7 +597,16 @@ input {
     padding-inline: var(--space-4);
   }
 
+  /* Quatro números curtos: duas colunas cabem e poupam uma tela inteira de rolagem. */
   .kpis {
-    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .kpi {
+    padding: var(--space-3);
+  }
+
+  .kpi__valor {
+    font-size: var(--type-title-size);
   }
 }

@@ -1,4 +1,5 @@
 import { FormularioLote } from "./componentes/FormularioLote";
+import { IconeDemanda, IconeLote, IconeReposicao, IconeSair } from "./componentes/Icones";
 import { Kpis } from "./componentes/Kpis";
 import { MarcaGiro } from "./componentes/Logo";
 import { TabelaDemanda } from "./componentes/TabelaDemanda";
@@ -20,11 +21,11 @@ export function App() {
           </div>
         </div>
         <nav aria-label="Seções do painel" className="lateral__nav">
-          <a href="#entrada" className="lateral__link">Entrada de lote</a>
-          <a href="#demanda" className="lateral__link">Demanda reprimida</a>
-          <a href="#reposicoes" className="lateral__link">Reposições</a>
+          <a href="#entrada" className="lateral__link"><IconeLote />Entrada de lote</a>
+          <a href="#demanda" className="lateral__link"><IconeDemanda />Demanda reprimida</a>
+          <a href="#reposicoes" className="lateral__link"><IconeReposicao />Reposições</a>
         </nav>
-        <a href={URL_VITRINE} className="lateral__vitrine">Ver a vitrine ›</a>
+        <a href={URL_VITRINE} className="lateral__vitrine"><IconeSair />Ver a vitrine</a>
       </aside>
 
       <div className="principal">
