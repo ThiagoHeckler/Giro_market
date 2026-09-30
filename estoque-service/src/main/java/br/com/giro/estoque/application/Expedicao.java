@@ -2,8 +2,10 @@ package br.com.giro.estoque.application;
 
 import br.com.giro.estoque.application.contrato.ReposicaoEnviada;
 import br.com.giro.estoque.domain.ProdutoEstoque;
+import br.com.giro.estoque.domain.ReposicaoExpedida;
 import br.com.giro.estoque.infra.outbox.Outbox;
 import br.com.giro.estoque.infra.persistencia.LoteRepository;
+import br.com.giro.estoque.infra.persistencia.ReposicaoExpedidaRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +16,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Transfere unidades de um lote para a prateleira do mercado e registra a {@link ReposicaoEnviada}.
+ * Transfere unidades de um lote para a prateleira do mercado, registra a {@link ReposicaoEnviada}
+ * e guarda o envio em {@link ReposicaoExpedida} (rastro de recall).
  * Um envio sai de um lote só (FEFO), para cada crédito na prateleira ter rastreio de lote;
  * se o lote não cobre o pedido, o mercado pede o resto no próximo gatilho.
  */
@@ -22,11 +25,13 @@ import java.util.UUID;
 public class Expedicao {
 
     private final LoteRepository lotes;
+    private final ReposicaoExpedidaRepository expedidas;
     private final Outbox outbox;
     private final Clock relogio;
 
-    public Expedicao(LoteRepository lotes, Outbox outbox, Clock relogio) {
+    public Expedicao(LoteRepository lotes, ReposicaoExpedidaRepository expedidas, Outbox outbox, Clock relogio) {
         this.lotes = lotes;
+        this.expedidas = expedidas;
         this.outbox = outbox;
         this.relogio = relogio;
     }
@@ -44,6 +49,7 @@ public class Expedicao {
             var evento = new ReposicaoEnviada(UUID.randomUUID(), correlationId, produto.getSku(), qtd,
                     lote.getCodigoLote(), relogio.instant());
             outbox.registrar(evento);
+            expedidas.save(new ReposicaoExpedida(evento.eventId(), correlationId, lote, qtd, evento.ocorridoEm()));
             return evento;
         });
     }

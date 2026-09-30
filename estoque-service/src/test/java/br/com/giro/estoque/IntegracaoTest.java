@@ -49,7 +49,7 @@ public abstract class IntegracaoTest {
 
     @BeforeEach
     void limpaBanco() {
-        jdbc.execute("TRUNCATE produto_estoque, lote, demanda_reprimida, outbox_event, inbox_event CASCADE");
+        jdbc.execute("TRUNCATE produto_estoque, lote, demanda_reprimida, reposicao_expedida, outbox_event, inbox_event CASCADE");
         DestinoFalso.reiniciar();
         WorkerFalso.reiniciar();
     }

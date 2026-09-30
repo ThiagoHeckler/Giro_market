@@ -9,6 +9,7 @@ import br.com.giro.estoque.domain.ProdutoEstoque;
 import br.com.giro.estoque.infra.persistencia.DemandaReprimidaRepository;
 import br.com.giro.estoque.infra.persistencia.LoteRepository;
 import br.com.giro.estoque.infra.persistencia.ProdutoEstoqueRepository;
+import br.com.giro.estoque.infra.persistencia.ReposicaoExpedidaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -36,6 +37,9 @@ class AtendimentoReposicaoTest extends IntegracaoTest {
 
     @Autowired
     DemandaReprimidaRepository demandas;
+
+    @Autowired
+    ReposicaoExpedidaRepository expedidas;
 
     @Autowired
     TransactionTemplate transacao;
@@ -87,6 +91,32 @@ class AtendimentoReposicaoTest extends IntegracaoTest {
                 });
         assertThat(saldo()).isEqualTo(34);
         assertThat(disponivelNoLote("L1")).isEqualTo(34);
+    }
+
+    @Test
+    void envioFicaRegistradoParaRecallDoLote() {
+        cadastra(new NovoLote("L1", 50, hojeMais(30)));
+        var pedido = pedido(16);
+
+        atendimento.processar(pedido);
+
+        var enviada = (ReposicaoEnviada) respostasNaOutbox().getFirst();
+        var loteId = jdbc.queryForObject("SELECT id FROM lote WHERE codigo_lote = 'L1'", Long.class);
+        assertThat(expedidas.findByLoteIdOrderByExpedidoEmAsc(loteId)).singleElement().satisfies(r -> {
+            assertThat(r.getEventId()).isEqualTo(enviada.eventId());
+            assertThat(r.getCorrelationId()).isEqualTo(pedido.eventId());
+            assertThat(r.getSku()).isEqualTo(COCA);
+            assertThat(r.getQtd()).isEqualTo(16);
+        });
+    }
+
+    @Test
+    void negacaoNaoRegistraEnvio() {
+        cadastra();
+
+        atendimento.processar(pedido(5));
+
+        assertThat(expedidas.count()).isZero();
     }
 
     @Test
