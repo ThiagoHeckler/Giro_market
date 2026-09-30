@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.tsbuildinfo
+# Gerado de design/tokens.json
+src/styles/tokens.css

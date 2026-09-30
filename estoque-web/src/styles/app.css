@@ -1,0 +1,529 @@
+/*
+ * Estilos do painel do estoque Girô. Toda cor, tipo, espaço e raio vem de tokens.css (gerado de
+ * design/tokens.json). Chrome em petróleo (brand-2): é app interno, não vitrine.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--type-body-family);
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-line);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mono {
+  font-family: var(--type-code-family);
+  font-size: var(--type-code-size);
+  font-weight: var(--type-code-weight);
+}
+
+.pular-para-conteudo {
+  position: absolute;
+  left: var(--space-4);
+  top: -100px;
+  z-index: 10;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-brand-2);
+  color: var(--color-ink-on-brand-2);
+  font-weight: 600;
+}
+
+.pular-para-conteudo:focus {
+  top: var(--space-4);
+}
+
+/* ---- Estrutura: lateral + principal ---------------------------------------------------- */
+
+.painel {
+  display: flex;
+  min-height: 100vh;
+}
+
+.lateral {
+  position: sticky;
+  top: 0;
+  width: 216px;
+  height: 100vh;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4) var(--space-3);
+  background: var(--color-surface-raised);
+  border-right: 1px solid var(--color-border);
+}
+
+.lateral__marca {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-4);
+}
+
+.lateral__nomes {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.lateral__nome {
+  font-family: var(--type-title-family);
+  font-weight: 700;
+  font-size: var(--type-body-lg-size);
+}
+
+.lateral__sistema {
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-muted);
+}
+
+.lateral__nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.lateral__link,
+.lateral__vitrine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--type-small-size);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.lateral__link:hover {
+  background: var(--color-brand-2-tint);
+  color: var(--color-brand-2-strong);
+}
+
+.lateral__vitrine {
+  margin-top: auto;
+  color: var(--color-brand-2);
+}
+
+.principal {
+  flex-grow: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topo__titulo {
+  margin: 0;
+  font-family: var(--type-title-family);
+  font-size: var(--type-title-size);
+  line-height: var(--type-title-line);
+  font-weight: var(--type-title-weight);
+}
+
+.conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+.colunas {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+}
+
+/* ---- KPIs ------------------------------------------------------------------------------ */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.kpi {
+  --tom: var(--color-border);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--tom);
+  border-radius: var(--radius-lg);
+}
+
+.kpi--perigo { --tom: var(--color-danger); }
+.kpi--alerta { --tom: var(--color-highlight); }
+.kpi--brand-2 { --tom: var(--color-brand-2); }
+
+.kpi__rotulo {
+  font-size: var(--type-small-size);
+  color: var(--color-ink-muted);
+}
+
+.kpi__valor {
+  margin: 0;
+  font-family: var(--type-code-family);
+  font-size: var(--type-display-size);
+  line-height: 1.1;
+  font-weight: var(--type-code-weight);
+  color: color-mix(in srgb, var(--tom) 70%, var(--color-ink));
+}
+
+.kpi--neutro .kpi__valor {
+  color: var(--color-ink);
+}
+
+/* ---- Cartões --------------------------------------------------------------------------- */
+
+.cartao {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.cartao--tabela {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.cartao__topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.cartao__titulo {
+  margin: 0;
+  font-family: var(--type-title-family);
+  font-size: var(--type-body-lg-size);
+  font-weight: 700;
+}
+
+.cartao__subtitulo {
+  font-size: var(--type-small-size);
+  color: var(--color-ink-muted);
+}
+
+/* ---- Formulário de lote ---------------------------------------------------------------- */
+
+.formulario-lote {
+  width: 400px;
+  flex-shrink: 0;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.campo label {
+  font-size: var(--type-small-size);
+  font-weight: 500;
+}
+
+.campo input {
+  height: 42px;
+  padding: 0 var(--space-3);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.campo input:invalid:not(:placeholder-shown):not(:focus) {
+  border-color: var(--color-danger);
+}
+
+.campo__ajuda {
+  min-height: 1.2em;
+  font-size: var(--type-caption-size);
+  color: var(--color-ink-muted);
+}
+
+.campo__ajuda--ok {
+  color: color-mix(in srgb, var(--color-success) 70%, var(--color-ink));
+}
+
+.campo__opcional {
+  font-weight: 400;
+  color: var(--color-ink-muted);
+}
+
+.campos-lado-a-lado {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--type-label-size);
+  font-weight: var(--type-label-weight);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.botao:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.botao--primario {
+  background: var(--color-brand);
+  color: var(--color-ink-on-brand);
+}
+
+.botao--primario:not(:disabled):hover {
+  background: var(--color-brand-strong);
+}
+
+.botao--secundario {
+  background: var(--color-surface-raised);
+  color: var(--color-brand-2-strong);
+  border: 1.5px solid var(--color-brand-2);
+}
+
+.botao--secundario:hover {
+  background: var(--color-brand-2-tint);
+}
+
+.botao--grande {
+  height: 46px;
+  font-size: var(--type-body-size);
+}
+
+.aviso {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--type-small-size);
+}
+
+.aviso--ok {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface-raised));
+  color: color-mix(in srgb, var(--color-success) 65%, var(--color-ink));
+}
+
+.aviso--erro {
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface-raised));
+  color: color-mix(in srgb, var(--color-danger) 72%, var(--color-ink));
+}
+
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 10px var(--space-3);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-md);
+  font-size: var(--type-caption-size);
+  line-height: 1.4;
+  color: var(--color-ink-muted);
+}
+
+.nota svg {
+  flex-shrink: 0;
+}
+
+/* ---- Tabelas --------------------------------------------------------------------------- */
+
+.tabela-rolagem {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--type-small-size);
+}
+
+.tabela th {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabela td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabela tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabela__numero {
+  text-align: right;
+}
+
+.tabela th.tabela__numero {
+  text-align: right;
+}
+
+.tabela__tempo {
+  white-space: nowrap;
+  color: var(--color-ink-muted);
+}
+
+.selo {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) 9px;
+  border-radius: var(--radius-pill);
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-line);
+  font-weight: 600;
+}
+
+.selo--entregue {
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface-raised));
+  color: color-mix(in srgb, var(--color-success) 62%, var(--color-ink));
+}
+
+.selo--enviando {
+  background: var(--color-brand-2-tint);
+  color: var(--color-brand-2-strong);
+}
+
+/* ---- Estados --------------------------------------------------------------------------- */
+
+.estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-8) var(--space-4);
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+
+.estado p {
+  margin: 0;
+}
+
+.estado--erro {
+  color: color-mix(in srgb, var(--color-danger) 72%, var(--color-ink));
+}
+
+/* ---- Telas estreitas ------------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .colunas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formulario-lote {
+    width: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .painel {
+    flex-direction: column;
+  }
+
+  .lateral {
+    position: static;
+    width: auto;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .lateral__marca {
+    padding: 0;
+  }
+
+  .lateral__nav {
+    display: none;
+  }
+
+  .lateral__vitrine {
+    margin: 0 0 0 auto;
+  }
+
+  .topo,
+  .conteudo {
+    padding-inline: var(--space-4);
+  }
+
+  .kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
