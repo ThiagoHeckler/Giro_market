@@ -17,6 +17,19 @@ body {
   font-size: var(--type-body-size);
   line-height: var(--type-body-line);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a,
+button,
+input {
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 a {
@@ -100,6 +113,7 @@ input {
 .codigo {
   font-family: var(--type-code-family);
   font-weight: var(--type-code-weight);
+  font-variant-numeric: tabular-nums;
 }
 
 .preco {
@@ -147,12 +161,18 @@ input {
   position: sticky;
   top: 0;
   z-index: 5;
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Mesma largura e gutter de .conteudo: marca e carrinho alinham com a grade em telas largas. */
+.cabecalho__interno {
+  max-width: 1280px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: var(--space-6);
   padding: var(--space-3) var(--space-8);
-  background: var(--color-surface-raised);
-  border-bottom: 1px solid var(--color-border);
 }
 
 .cabecalho__marca {
@@ -195,7 +215,12 @@ input {
   background: transparent;
   color: var(--color-ink);
   font-size: var(--type-label-size);
+  /* O anel de foco fica no formulário inteiro (:focus-within acima). */
   outline: none;
+}
+
+.cabecalho__busca input::placeholder {
+  color: var(--color-ink-muted);
 }
 
 .cabecalho__nav {
@@ -254,7 +279,7 @@ input {
   border: 1.5px solid var(--color-brand-2);
 }
 
-.botao--secundario:hover {
+.botao--secundario:not(:disabled):hover {
   background: var(--color-brand-2-tint);
 }
 
@@ -281,6 +306,10 @@ input {
 
 .botao-icone--perigo {
   color: var(--color-danger);
+}
+
+.botao-icone:focus-visible {
+  outline-offset: 0;
 }
 
 .botao-icone--perigo:hover {
@@ -316,15 +345,18 @@ input {
 }
 
 .heroi h1 {
+  position: relative;
   margin: 0;
   max-width: 560px;
   font-family: var(--type-display-lg-family);
-  font-size: var(--type-display-size);
-  line-height: var(--type-display-line);
-  font-weight: 700;
+  font-size: var(--type-display-lg-size);
+  line-height: var(--type-display-lg-line);
+  font-weight: var(--type-display-lg-weight);
+  letter-spacing: -0.02em;
 }
 
 .heroi p {
+  position: relative;
   margin: 0;
   max-width: 520px;
   color: color-mix(in srgb, var(--color-ink-on-brand) 88%, var(--color-brand));
@@ -362,8 +394,9 @@ input {
   text-decoration: none;
 }
 
-.chip:hover {
+.chip:not(.chip--ativo):hover {
   border-color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 6%, var(--color-surface-raised));
 }
 
 .chip--ativo {
@@ -469,6 +502,11 @@ input {
   text-decoration: none;
 }
 
+.cartao-produto__link:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
 .cartao-produto__imagem {
   position: relative;
 }
@@ -480,11 +518,21 @@ input {
 }
 
 .cartao-produto__nome {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: calc(2 * 1.3em + 14px);
   margin: 0;
   padding: 14px 14px 0;
   font-size: var(--type-body-size);
   font-weight: 600;
   line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.cartao-produto__link:hover .cartao-produto__nome {
+  text-decoration: underline;
 }
 
 .cartao-produto--esgotado .cartao-produto__nome,
@@ -609,6 +657,10 @@ input {
   background: var(--color-surface-raised);
 }
 
+.seletor:focus-within {
+  border-color: var(--color-focus-ring);
+}
+
 .seletor button {
   width: 44px;
   height: 100%;
@@ -616,6 +668,14 @@ input {
   background: transparent;
   font-size: 20px;
   cursor: pointer;
+}
+
+.seletor button:not(:disabled):hover {
+  background: var(--color-surface-sunken);
+}
+
+.seletor button:focus-visible {
+  outline-offset: -2px;
 }
 
 .seletor button:disabled {
@@ -685,6 +745,10 @@ input {
 
 .estado p {
   margin: 0;
+}
+
+.estado--erro {
+  color: color-mix(in srgb, var(--color-danger) 72%, var(--color-ink));
 }
 
 /* ---- Carrinho e resumo ----------------------------------------------------------------- */
@@ -803,6 +867,16 @@ input {
   list-style: none;
 }
 
+/* ---- Movimento reduzido ---------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* ---- Telas estreitas ------------------------------------------------------------------- */
 
 @media (max-width: 860px) {
@@ -810,7 +884,7 @@ input {
     padding: var(--space-4) var(--space-4) var(--space-12);
   }
 
-  .cabecalho {
+  .cabecalho__interno {
     flex-wrap: wrap;
     gap: var(--space-3);
     padding: var(--space-3) var(--space-4);
@@ -820,6 +894,11 @@ input {
     order: 3;
     max-width: none;
     flex-basis: 100%;
+  }
+
+  /* 16px ou mais: abaixo disso o Safari do iOS dá zoom ao focar. */
+  .cabecalho__busca input {
+    font-size: 16px;
   }
 
   .produto,
@@ -838,6 +917,24 @@ input {
 
   .heroi {
     padding: var(--space-6);
+  }
+
+  .heroi h1 {
+    font-size: var(--type-display-size);
+    line-height: var(--type-display-line);
+  }
+
+  .heroi p {
+    font-size: var(--type-small-size);
+    line-height: var(--type-small-line);
+  }
+
+  .heroi__marca {
+    width: 140px;
+    height: 140px;
+    right: -36px;
+    top: auto;
+    bottom: -40px;
   }
 
   .chips {

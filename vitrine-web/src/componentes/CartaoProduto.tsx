@@ -27,7 +27,7 @@ export function CartaoProduto({ produto, aoAdicionar }: Props) {
           <Monograma nome={produto.nome} categoria={produto.categoria} apagado={esgotado} />
           <SeloEstoque status={produto.status} className="cartao-produto__selo" />
         </div>
-        <h3 className="cartao-produto__nome">{produto.nome}</h3>
+        <h3 className="cartao-produto__nome" title={produto.nome}>{produto.nome}</h3>
       </Link>
       <div className="cartao-produto__rodape">
         <span className="preco">{formatarPreco(produto.preco)}</span>
@@ -46,6 +46,8 @@ export function CartaoProduto({ produto, aoAdicionar }: Props) {
             {adicionado ? "Adicionado ✓" : "Adicionar"}
           </button>
         )}
+        {/* O aria-label do botão esconde o "Adicionado ✓"; o anúncio vem daqui. */}
+        <span className="vh" role="status">{adicionado ? `${produto.nome} adicionado ao carrinho` : ""}</span>
       </div>
     </article>
   );

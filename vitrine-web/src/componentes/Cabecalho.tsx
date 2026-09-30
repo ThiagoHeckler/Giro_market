@@ -22,32 +22,39 @@ export function Cabecalho() {
 
   return (
     <header className="cabecalho">
-      <Link to="/" className="cabecalho__marca" aria-label="Girô — início">
-        <MarcaGiro />
-        <span className="cabecalho__nome">Girô</span>
-      </Link>
-
-      <form role="search" className="cabecalho__busca" onSubmit={buscar}>
-        <IconeBusca />
-        <label className="vh" htmlFor="busca">Buscar produtos</label>
-        <input
-          id="busca"
-          type="search"
-          placeholder="Buscar produtos, marcas ou SKU"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-        />
-      </form>
-
-      <nav className="cabecalho__nav" aria-label="Conta e carrinho">
-        <Link to="/carrinho" className="botao botao--primario cabecalho__carrinho">
-          <IconeCarrinho />
-          Carrinho
-          <span className="contador" aria-label={`${quantidade} ${quantidade === 1 ? "item" : "itens"}`}>
-            {quantidade}
-          </span>
+      <div className="cabecalho__interno">
+        <Link to="/" className="cabecalho__marca" aria-label="Girô — início">
+          <MarcaGiro />
+          <span className="cabecalho__nome">Girô</span>
         </Link>
-      </nav>
+
+        <form role="search" className="cabecalho__busca" onSubmit={buscar}>
+          <IconeBusca />
+          <label className="vh" htmlFor="busca">Buscar produtos</label>
+          <input
+            id="busca"
+            type="search"
+            placeholder="Buscar produtos, marcas ou SKU…"
+            autoComplete="off"
+            spellCheck={false}
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+          />
+        </form>
+
+        <nav className="cabecalho__nav" aria-label="Conta e carrinho">
+          <Link to="/carrinho" className="botao botao--primario cabecalho__carrinho">
+            <IconeCarrinho />
+            Carrinho
+            {quantidade > 0 && (
+              <span className="contador" aria-hidden="true">
+                {quantidade}
+              </span>
+            )}
+            <span className="vh">, {quantidade} {quantidade === 1 ? "item" : "itens"}</span>
+          </Link>
+        </nav>
+      </div>
     </header>
   );
 }
