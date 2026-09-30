@@ -28,7 +28,7 @@ Este arquivo é o roteiro de partida. O prompt abaixo é para colar no Claude Co
 3. Contratos de evento e o par publisher/consumer com Testcontainers
 4. `tag-worker` FastAPI + integração na entrada de lote
 5. `vitrine-web` React consumindo o mercado (usa `design/tokens.json`)
-6. Admin HTMX do estoque
+6. `estoque-web` React: painel do estoque
 7. Docker Compose amarrando tudo
 
 ## Critérios para considerar um passo "pronto"

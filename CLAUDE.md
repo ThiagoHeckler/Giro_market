@@ -16,6 +16,7 @@ estoque-2.0/
 ├── mercado-service/   # Java 25 + Spring Boot 4
 ├── tag-worker/        # Python 3.12 + FastAPI (classificação de tags via LLM)
 ├── vitrine-web/       # React + Vite (vitrine do mercado)
+├── estoque-web/       # React + Vite (painel do estoque)
 ├── design/            # tokens e brand book da identidade Girô
 ├── scripts/           # popular-demo.sh (dados de demonstração via APIs)
 ├── docker-compose.yml
@@ -31,7 +32,7 @@ estoque-2.0/
 - **JPA 3.2 / Hibernate 7**.
 - **JUnit 5 + Testcontainers** — Postgres real nos testes, nunca H2.
 - **Python 3.12 + FastAPI + Pydantic v2** no `tag-worker`.
-- **React 18 + Vite + TypeScript** na `vitrine-web`.
+- **React 18 + Vite + TypeScript** na `vitrine-web` e no `estoque-web`.
 - Idioma do domínio e dos comentários: **português**. Nomes de classe/variável em português quando forem termos de domínio (`ProdutoVitrine`, `DemandaReprimida`).
 
 ## Regras inegociáveis (é o que dá valor ao projeto)
@@ -66,16 +67,17 @@ docker compose up -d
 (cd estoque-service && ./mvnw spring-boot:run)     # http://localhost:18081
 (cd mercado-service && ./mvnw spring-boot:run)     # http://localhost:18080
 (cd vitrine-web && npm install && npm run dev)     # http://localhost:15173 (proxy /api → mercado)
+(cd estoque-web && npm install && npm run dev)     # http://localhost:15174 (proxy /api → estoque)
 scripts/popular-demo.sh
 ```
 
-Testes: `./mvnw test` em cada serviço Java (Docker precisa estar no ar), `uv run pytest` no `tag-worker`, `npm test` na `vitrine-web`.
+Testes: `./mvnw test` em cada serviço Java (Docker precisa estar no ar), `uv run pytest` no `tag-worker`, `npm test` na `vitrine-web` e no `estoque-web`.
 
 `GROQ_API_KEY` fica só no `.env` da raiz (ignorado pelo git; o compose e o worker leem de lá). **Nunca** escreva a chave em código, commit ou log. Sem chave, o worker usa o classificador por palavras-chave (é o modo dos testes).
 
-## Estado atual (atualizado em 2026-09-25)
+## Estado atual (atualizado em 2026-09-29)
 
-Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–5 da seção 11 concluídos; **próximo: Passo 6** (admin do estoque, mockup `design/mockups/Estoque.dc.html`: KPIs, entrada de lote, tabela de demanda reprimida, reposições recentes; chrome em `brand-2`).
+Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–6 da seção 11 concluídos; **próximo: Passo 7** (serviços Java, `vitrine-web` e `estoque-web` no `docker-compose`; autenticação entre serviços).
 
 | Passo | Entregue |
 |---|---|
@@ -84,6 +86,7 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 | 3 | Publicador da outbox nos dois serviços (`FOR UPDATE SKIP LOCKED`, backoff exponencial) + `POST /eventos`; estoque atende `ReposicaoSolicitada` (FEFO) |
 | 4 | `tag-worker` (FastAPI + Groq `openai/gpt-oss-20b`, JSON Schema estrito); `POST /lotes` com classificação fora da transação e atendimento da demanda reprimida; reclassificação agendada; evento `ProdutoClassificado` |
 | 5 | API REST do mercado (produtos, cadastro, pedidos) + `vitrine-web` (React 18, TanStack Query, tokens gerados) + `scripts/popular-demo.sh` |
+| 6 | `estoque-web` (painel: KPIs, entrada de lote, demanda reprimida, reposições recentes); `GET /painel/*` no estoque; tabela `reposicao_expedida` (V9) |
 
 ### Decisões já tomadas (não relitigar sem motivo novo)
 
@@ -97,14 +100,16 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 - **Cadastro na vitrine** entra com prateleira 0 e o próprio gatilho pede o primeiro lote. SKU desconhecido no estoque → 422; estoque fora do ar → cadastra sem classificação.
 - **Colunas além da seção 6:** `versao` (`@Version`) em `ProdutoEstoque`/`ProdutoVitrine`; `preco`, `categoria`, `classificado_em` em `produto_vitrine`; `categoria` em `produto_estoque`; controle de reenvio na outbox (`tentativas`, `proxima_tentativa_em`, `ultimo_erro`, `enviado_em`).
 - **Vitrine:** "Avise-me" do mockup virou "Reposição a caminho" (não prometer notificação que não existe); sem frete nem preço de oferta (não existem no backend); contagem da reserva na tela do pedido (a reserva nasce no checkout).
+- **Painel do estoque em React** (`estoque-web`, app separado da vitrine), não Thymeleaf + HTMX como previa a primeira versão do ARCHITECTURE.md. Só lê dados do estoque: nada de "abaixo do mínimo" ou "esgotados no mercado" (isso é do mercado). KPI "sem saldo válido" conta saldo **expedível** (zerado ou só lotes vencidos); status da reposição = entrega do evento na outbox (`enviado_em`).
+- **`reposicao_expedida`**: um registro por `ReposicaoEnviada`, na mesma transação (recall por lote + histórico). A V9 recupera os envios antigos a partir da outbox.
 - **Relógio** (`Clock`) no fuso `America/Sao_Paulo` — pesa só em datas civis (validade de lote).
 
 ### Pendências conhecidas
 
 - Expiração da reserva (devolver unidades à prateleira) e confirmação de pagamento — não implementadas.
 - Evento que recebe 400 é reenviado para sempre (com backoff até 5 min): falta status `FAILED`/dead-letter.
-- Autenticação entre serviços em `/eventos` e `/produtos` do estoque.
-- Serviços Java e `vitrine-web` no `docker-compose` (Passo 7).
+- Autenticação entre serviços em `/eventos` e `/produtos` do estoque; `/lotes` e `/painel` (usados pelo `estoque-web`) também estão abertos.
+- Serviços Java, `vitrine-web` e `estoque-web` no `docker-compose` (Passo 7).
 
 ### Convenções que surgiram na prática
 
@@ -114,5 +119,5 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 - Chamadas HTTP a outro serviço **fora** da transação de banco (worker de tags, consulta ao estoque), com timeout curto; falha nunca bloqueia a operação principal.
 - Testes de integração estendem `IntegracaoTest` (um contexto e um container para a suíte, `TRUNCATE` a cada teste, agendadores desligados). `DestinoFalso`/`WorkerFalso` são servidores HTTP do JDK que fazem o papel do outro serviço. `ContratoTagWorkerTest` sobe o tag-worker real a partir do `Dockerfile`.
 - Todo `switch` sobre `EventoIntegracao` é exaustivo — novo evento quebra a compilação onde precisa ser tratado.
-- `vitrine-web`: nenhuma cor/medida solta; `src/styles/tokens.css` é gerado por `npm run tokens` (roda sozinho antes de `dev`, `build` e `test`) e não vai para o git. Tons suaves via `color-mix()` sobre tokens.
+- `vitrine-web` e `estoque-web`: nenhuma cor/medida solta (cada app tem sua cópia de `scripts/gerar-tokens.mjs`, como os contratos); `src/styles/tokens.css` é gerado por `npm run tokens` (roda sozinho antes de `dev`, `build` e `test`) e não vai para o git. Tons suaves via `color-mix()` sobre tokens.
 - Fluxo de trabalho: um passo por vez, testes verdes, parar para revisão; commits em unidades lógicas, cada um verificado isoladamente (build + testes num `git worktree`).

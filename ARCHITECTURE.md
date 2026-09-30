@@ -40,7 +40,7 @@ flowchart LR
 | `estoque-service` | Java 25 + Spring Boot 4 | Saldo, lotes, transferências, demanda reprimida |
 | `tag-worker` | Python 3.12 + FastAPI | Classificação de tags/categoria via LLM (REST síncrono) |
 | `vitrine-web` | React + Vite | Front do mercado |
-| Admin estoque | Thymeleaf + HTMX | Painel operacional (entrada de lote, saldo) — sem SPA |
+| `estoque-web` | React + Vite | Painel operacional do estoque (entrada de lote, demanda reprimida, reposições) — só lê o estoque |
 
 **Bancos:** dois PostgreSQL 17 separados, um por serviço. Sem FK cruzada entre bancos — o **SKU/EAN** é a identidade canônica compartilhada.
 
@@ -128,6 +128,7 @@ Os quatro implementam a interface selada `EventoIntegracao` (`eventId()`, `ocorr
 ProdutoEstoque   { sku (PK, EAN), descricao, ncm, tags (JSON), saldoDisponivel }
 Lote             { id, sku, codigoLote, quantidade, validade, recebidoEm }
 DemandaReprimida { id, sku, qtdSolicitada, solicitacaoOriginal (UUID), atendida, registradoEm }
+ReposicaoExpedida { id, eventId, correlationId, sku, loteId, qtd, expedidoEm }  // um por ReposicaoEnviada: recall e histórico
 ```
 
 ### mercado-service
@@ -186,7 +187,7 @@ FastAPI + Pydantic. O estoque chama na entrada de lote. Timeout curto; falha = s
 - **JUnit 5 + Testcontainers** — Postgres real nos testes
 - **Python 3.12 + FastAPI + Pydantic** — worker de tags
 - **React + Vite** — vitrine
-- **Thymeleaf + HTMX** — admin do estoque
+- **React + Vite** — painel do estoque (`estoque-web`), app interno separado da vitrine
 - **Docker Compose** — orquestração local
 
 ---
@@ -204,7 +205,8 @@ estoque-2.0/
 ├── tag-worker/             # Python + FastAPI
 │   ├── app/
 │   └── pyproject.toml
-├── vitrine-web/            # React + Vite
+├── vitrine-web/            # React + Vite (vitrine do mercado)
+├── estoque-web/            # React + Vite (painel do estoque)
 ├── docker-compose.yml
 └── ARCHITECTURE.md
 ```
@@ -218,5 +220,5 @@ estoque-2.0/
 3. Contratos de evento e o par publisher/consumer com Testcontainers
 4. `tag-worker` FastAPI + integração na entrada de lote
 5. `vitrine-web` React consumindo o mercado
-6. Admin HTMX do estoque
+6. `estoque-web` React: painel do estoque
 7. Docker Compose amarrando tudo

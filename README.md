@@ -18,6 +18,7 @@ Detalhes completos em [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 | `estoque-service` | Java 25 + Spring Boot 4 | 18081 |
 | `tag-worker` | Python 3.12 + FastAPI | 18000 |
 | `vitrine-web` | React + Vite | 15173 |
+| `estoque-web` | React + Vite | 15174 |
 
 ## Rodando
 
@@ -28,6 +29,7 @@ docker compose up -d                                   # Postgres do estoque e d
 (cd estoque-service && ./mvnw spring-boot:run)         # :18081
 (cd mercado-service && ./mvnw spring-boot:run)         # :18080
 (cd vitrine-web && npm install && npm run dev)         # :15173, com proxy /api → mercado
+(cd estoque-web && npm install && npm run dev)         # :15174, com proxy /api → estoque
 scripts/popular-demo.sh                                # produtos de demonstração
 ```
 
