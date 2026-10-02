@@ -46,7 +46,7 @@ describe("Painel do estoque", () => {
     apiDoPainel();
     renderizar(<App />);
 
-    const secao = screen.getByRole("region", { name: "Demanda reprimida" });
+    const secao = await screen.findByRole("region", { name: "Demanda reprimida" });
     expect(await within(secao).findByText("2 pedidos aguardando lote")).toBeInTheDocument();
     const linhas = within(secao).getAllByRole("row").slice(1);
     expect(linhas.map((l) => within(l).getAllByRole("cell")[1]?.textContent)).toEqual([
@@ -59,7 +59,7 @@ describe("Painel do estoque", () => {
     apiDoPainel();
     renderizar(<App />);
 
-    const secao = screen.getByRole("region", { name: "Reposições recentes" });
+    const secao = await screen.findByRole("region", { name: "Reposições recentes" });
     const [enviando, entregue] = (await within(secao).findAllByRole("row")).slice(1);
     expect(enviando).toHaveTextContent("LT-2287");
     expect(enviando).toHaveTextContent("enviando");
@@ -78,7 +78,7 @@ describe("Painel do estoque", () => {
     apiDoPainel({ "GET /api/painel/reposicoes?limite=20": () => json({ status: 503 }, 503) });
     renderizar(<App />);
 
-    const secao = screen.getByRole("region", { name: "Reposições recentes" });
+    const secao = await screen.findByRole("region", { name: "Reposições recentes" });
     expect(await within(secao).findByRole("alert")).toHaveTextContent("O estoque não respondeu.");
     expect(within(secao).getByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
   });

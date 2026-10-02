@@ -1,4 +1,11 @@
-/** Cliente da API do estoque-service. Em dev, /api passa pelo proxy do Vite. */
+/**
+ * Cliente da API do estoque-service. Em dev, /api passa pelo proxy do Vite; no compose, pelo nginx.
+ * O operador entra com sessão (cookie HttpOnly); toda escrita leva o token CSRF no header.
+ */
+
+export interface Sessao {
+  usuario: string;
+}
 
 export interface Resumo {
   skusCadastrados: number;
@@ -72,12 +79,35 @@ export class ErroApi extends Error {
   }
 }
 
+/** Cookie (legível pelo front) onde o estoque entrega o token CSRF; volta no header X-XSRF-TOKEN. */
+export const COOKIE_CSRF = "XSRF-ESTOQUE";
+
+function lerCookie(nome: string): string | null {
+  const par = document.cookie.split("; ").find((c) => c.startsWith(`${nome}=`));
+  return par ? decodeURIComponent(par.slice(nome.length + 1)) : null;
+}
+
+/**
+ * O estoque só grava o cookie do token quando o lê, e o troca no login e no logout. Sem cookie,
+ * GET /sessao o entrega antes da escrita.
+ */
+async function tokenCsrf(): Promise<string | null> {
+  if (!lerCookie(COOKIE_CSRF)) {
+    await fetch("/api/sessao", { headers: { Accept: "application/json" } });
+  }
+  return lerCookie(COOKIE_CSRF);
+}
+
 async function requisitar<T>(caminho: string, init?: RequestInit): Promise<T> {
+  const escrita = (init?.method ?? "GET") !== "GET";
+  const csrf = escrita ? await tokenCsrf() : null;
   const resposta = await fetch(`/api${caminho}`, {
     ...init,
     headers: {
       Accept: "application/json",
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      // Corpo em texto é JSON; formulário (URLSearchParams) leva o Content-Type que o fetch define.
+      ...(typeof init?.body === "string" ? { "Content-Type": "application/json" } : {}),
+      ...(csrf ? { "X-XSRF-TOKEN": csrf } : {}),
     },
   });
   if (!resposta.ok) {
@@ -89,10 +119,34 @@ async function requisitar<T>(caminho: string, init?: RequestInit): Promise<T> {
     }
     throw new ErroApi({ ...corpo, status: resposta.status });
   }
+  if (resposta.status === 204) return undefined as T;
   return resposta.json() as Promise<T>;
 }
 
+/** Sessão ausente ou expirada: o app volta para a tela de login. */
+export function naoAutenticado(erro: unknown): boolean {
+  return erro instanceof ErroApi && erro.status === 401;
+}
+
 export const estoque = {
+  /** Operador logado, ou null se não há sessão. */
+  async sessaoAtual(): Promise<Sessao | null> {
+    try {
+      return await requisitar("/sessao");
+    } catch (erro) {
+      if (naoAutenticado(erro)) return null;
+      throw erro;
+    }
+  },
+
+  entrar(usuario: string, senha: string): Promise<void> {
+    return requisitar("/sessao", { method: "POST", body: new URLSearchParams({ usuario, senha }) });
+  },
+
+  sair(): Promise<void> {
+    return requisitar("/sessao", { method: "DELETE" });
+  },
+
   resumo(): Promise<Resumo> {
     return requisitar("/painel/resumo");
   },
