@@ -26,7 +26,7 @@ export interface PedidoFechado {
 
 export interface PedidoDetalhe {
   id: string;
-  status: "AGUARDANDO_PAGAMENTO" | "PAGO" | "CANCELADO";
+  status: "AGUARDANDO_PAGAMENTO" | "PAGO" | "CANCELADO" | "EXPIRADO";
   total: number;
   criadoEm: string;
   reservaExpiraEm: string | null;
@@ -96,5 +96,10 @@ export const mercado = {
 
   buscarPedido(id: string): Promise<PedidoDetalhe> {
     return requisitar(`/pedidos/${encodeURIComponent(id)}`);
+  },
+
+  /** Pagamento simulado. 409 se o prazo da reserva já terminou. */
+  pagarPedido(id: string): Promise<PedidoDetalhe> {
+    return requisitar(`/pedidos/${encodeURIComponent(id)}/pagamento`, { method: "POST" });
   },
 };
