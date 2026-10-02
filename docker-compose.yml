@@ -1,4 +1,6 @@
-# Um Postgres por serviço, sem FK cruzada. Os serviços Java entram no compose no Passo 7.
+# Estoque 2.0 completo: um Postgres por serviço (sem FK cruzada), os dois serviços Java, o tag-worker
+# e as duas UIs. Portas do host altas para não colidir com projetos locais; todas ajustáveis pelo .env.
+# Desenvolvimento com os serviços fora do compose: docker compose up -d estoque-db mercado-db tag-worker
 name: estoque-2-0
 
 services:
@@ -9,7 +11,6 @@ services:
       POSTGRES_USER: ${ESTOQUE_DB_USER:-estoque}
       POSTGRES_PASSWORD: ${ESTOQUE_DB_PASSWORD:-estoque}
     ports:
-      # Portas altas no host para não colidir com Postgres/serviços locais; ajuste pelo .env.
       - "${ESTOQUE_DB_PORTA:-15433}:5432"
     volumes:
       - estoque-db-data:/var/lib/postgresql/data
@@ -47,6 +48,67 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # Estoque e mercado mandam eventos um para o outro, mas nenhum depende do outro para subir:
+  # a outbox reenvia com backoff até o destino responder.
+  estoque-service:
+    build: ./estoque-service
+    environment:
+      ESTOQUE_DB_URL: jdbc:postgresql://estoque-db:5432/estoque
+      ESTOQUE_DB_USER: ${ESTOQUE_DB_USER:-estoque}
+      ESTOQUE_DB_PASSWORD: ${ESTOQUE_DB_PASSWORD:-estoque}
+      MERCADO_EVENTOS_URL: http://mercado-service:8080
+      TAG_WORKER_URL: http://tag-worker:8000
+    ports:
+      - "${ESTOQUE_PORTA:-18081}:8081"
+    depends_on:
+      estoque-db:
+        condition: service_healthy
+      # Só para a ordem de subida: sem o worker, o lote entra sem tags e é reclassificado depois.
+      tag-worker:
+        condition: service_started
+
+  mercado-service:
+    build: ./mercado-service
+    environment:
+      MERCADO_DB_URL: jdbc:postgresql://mercado-db:5432/mercado
+      MERCADO_DB_USER: ${MERCADO_DB_USER:-mercado}
+      MERCADO_DB_PASSWORD: ${MERCADO_DB_PASSWORD:-mercado}
+      ESTOQUE_EVENTOS_URL: http://estoque-service:8081
+      ESTOQUE_URL: http://estoque-service:8081
+    ports:
+      - "${MERCADO_PORTA:-18080}:8080"
+    depends_on:
+      mercado-db:
+        condition: service_healthy
+
+  vitrine-web:
+    build:
+      context: ./vitrine-web
+      additional_contexts:
+        design: ./design
+    environment:
+      API_UPSTREAM: http://mercado-service:8080
+    ports:
+      - "${VITRINE_PORTA:-15173}:8080"
+    depends_on:
+      mercado-service:
+        condition: service_healthy
+
+  estoque-web:
+    build:
+      context: ./estoque-web
+      additional_contexts:
+        design: ./design
+      args:
+        VITE_VITRINE_URL: http://localhost:${VITRINE_PORTA:-15173}
+    environment:
+      API_UPSTREAM: http://estoque-service:8081
+    ports:
+      - "${ESTOQUE_WEB_PORTA:-15174}:8080"
+    depends_on:
+      estoque-service:
+        condition: service_healthy
 
 volumes:
   estoque-db-data:

@@ -60,15 +60,21 @@ Mensagens em português, no imperativo (`Adiciona outbox no mercado-service`). U
 
 ## Como rodar
 
-Até o Passo 7, o compose sobe só a infraestrutura (Postgres do estoque em **15433**, do mercado em **15434** e o tag-worker em 18000 — portas altas para não colidir com outros projetos locais; todas ajustáveis por variável no `.env`). Os serviços rodam fora dele:
+O compose sobe tudo: Postgres do estoque em **15433** e do mercado em **15434**, tag-worker em 18000, estoque em 18081, mercado em 18080, vitrine em 15173 e painel em 15174 (portas altas para não colidir com outros projetos locais; todas ajustáveis por variável no `.env`). As UIs são servidas por nginx, que encaminha `/api` para o serviço.
 
 ```bash
-docker compose up -d
+docker compose up -d --build --wait
+scripts/popular-demo.sh
+```
+
+Em desenvolvimento, só a infraestrutura no compose e os serviços fora dele:
+
+```bash
+docker compose up -d estoque-db mercado-db tag-worker
 (cd estoque-service && ./mvnw spring-boot:run)     # http://localhost:18081
 (cd mercado-service && ./mvnw spring-boot:run)     # http://localhost:18080
 (cd vitrine-web && npm install && npm run dev)     # http://localhost:15173 (proxy /api → mercado)
 (cd estoque-web && npm install && npm run dev)     # http://localhost:15174 (proxy /api → estoque)
-scripts/popular-demo.sh
 ```
 
 Testes: `./mvnw test` em cada serviço Java (Docker precisa estar no ar), `uv run pytest` no `tag-worker`, `npm test` na `vitrine-web` e no `estoque-web`.
@@ -77,7 +83,7 @@ Testes: `./mvnw test` em cada serviço Java (Docker precisa estar no ar), `uv ru
 
 ## Estado atual (atualizado em 2026-09-29)
 
-Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–6 da seção 11 concluídos; **próximo: Passo 7** (serviços Java, `vitrine-web` e `estoque-web` no `docker-compose`; autenticação entre serviços).
+Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–6 da seção 11 concluídos; **em andamento: Passo 7** — stack completa no `docker-compose` feita; falta a autenticação entre serviços.
 
 | Passo | Entregue |
 |---|---|
@@ -109,7 +115,6 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 - Expiração da reserva (devolver unidades à prateleira) e confirmação de pagamento — não implementadas.
 - Evento que recebe 400 é reenviado para sempre (com backoff até 5 min): falta status `FAILED`/dead-letter.
 - Autenticação entre serviços em `/eventos` e `/produtos` do estoque; `/lotes` e `/painel` (usados pelo `estoque-web`) também estão abertos.
-- Serviços Java, `vitrine-web` e `estoque-web` no `docker-compose` (Passo 7).
 
 ### Convenções que surgiram na prática
 
