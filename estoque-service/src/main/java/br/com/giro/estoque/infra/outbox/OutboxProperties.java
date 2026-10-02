@@ -8,6 +8,7 @@ import java.util.Objects;
 
 /**
  * @param destino            URL base do serviço que recebe os eventos (POST {destino}/eventos)
+ * @param token              token de serviço que o destino exige ({@code Authorization: Bearer})
  * @param publicadorHabilitado liga o polling agendado; os testes o desligam e chamam o publicador direto
  * @param intervalo          pausa entre uma rodada de polling e a próxima
  * @param tamanhoLote        eventos travados por rodada
@@ -17,6 +18,7 @@ import java.util.Objects;
 @ConfigurationProperties("outbox")
 public record OutboxProperties(
         URI destino,
+        String token,
         boolean publicadorHabilitado,
         Duration intervalo,
         int tamanhoLote,
@@ -25,6 +27,9 @@ public record OutboxProperties(
 
     public OutboxProperties {
         Objects.requireNonNull(destino, "outbox.destino é obrigatório");
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("outbox.token é obrigatório: defina MERCADO_TOKEN_SERVICO");
+        }
         Objects.requireNonNull(intervalo, "outbox.intervalo é obrigatório");
         Objects.requireNonNull(timeout, "outbox.timeout é obrigatório");
         Objects.requireNonNull(backoffMaximo, "outbox.backoff-maximo é obrigatório");

@@ -9,8 +9,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** Servidor HTTP que faz o papel do outro serviço: registra o que recebe e responde o status configurado. */
+/**
+ * Servidor HTTP que faz o papel do outro serviço: registra o que recebe e responde o status configurado.
+ * Como o serviço real, recusa com 401 quem não manda o token de serviço dele.
+ */
 public final class DestinoFalso {
+
+    public static final String TOKEN = "token-do-mercado-nos-testes-0123456789abcdef";
 
     public record Recebido(String tipo, String corpo) {
     }
@@ -27,6 +32,10 @@ public final class DestinoFalso {
             var servidor = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
             servidor.createContext("/eventos", troca -> {
                 try (troca) {
+                    if (!("Bearer " + TOKEN).equals(troca.getRequestHeaders().getFirst("Authorization"))) {
+                        troca.sendResponseHeaders(401, -1);
+                        return;
+                    }
                     var corpo = new String(troca.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                     RECEBIDOS.add(new Recebido(troca.getRequestHeaders().getFirst("Evento-Tipo"), corpo));
                     troca.sendResponseHeaders(status, -1);

@@ -19,7 +19,8 @@ class LoteControllerTest extends IntegracaoTest {
     MockMvcTester mvc;
 
     private MockMvcTester.MockMvcRequestBuilder post(String corpo) {
-        return mvc.post().uri("/lotes").contentType(MediaType.APPLICATION_JSON).content(corpo);
+        return mvc.post().uri("/lotes").contentType(MediaType.APPLICATION_JSON).content(corpo)
+                .with(comoOperador()).with(comCsrf());
     }
 
     @Test

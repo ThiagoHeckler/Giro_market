@@ -21,7 +21,7 @@ class EventoControllerTest extends IntegracaoTest {
 
     private MockMvcTester.MockMvcRequestBuilder post(String tipo, String corpo) {
         return mvc.post().uri("/eventos").contentType(MediaType.APPLICATION_JSON)
-                .header("Evento-Tipo", tipo).content(corpo);
+                .header("Evento-Tipo", tipo).content(corpo).with(comoServico());
     }
 
     @Test
@@ -64,7 +64,8 @@ class EventoControllerTest extends IntegracaoTest {
 
     @Test
     void semHeaderDeTipoResponde400() {
-        assertThat(mvc.post().uri("/eventos").contentType(MediaType.APPLICATION_JSON).content(SOLICITACAO))
+        assertThat(mvc.post().uri("/eventos").contentType(MediaType.APPLICATION_JSON).content(SOLICITACAO)
+                .with(comoServico()))
                 .hasStatus(HttpStatus.BAD_REQUEST);
     }
 }

@@ -26,7 +26,7 @@ class ProdutoEstoqueControllerTest extends IntegracaoTest {
         produto.classificar(List.of("refrigerante", "2l"), "bebidas");
         produtos.save(produto);
 
-        assertThat(mvc.get().uri("/produtos/7894900011517")).hasStatusOk()
+        assertThat(mvc.get().uri("/produtos/7894900011517").with(comoServico())).hasStatusOk()
                 .bodyJson().isLenientlyEqualTo("""
                         {"sku":"7894900011517","descricao":"COCA COLA 2L PET","tags":["refrigerante","2l"],
                          "categoria":"bebidas","saldoDisponivel":0}""");
@@ -36,12 +36,12 @@ class ProdutoEstoqueControllerTest extends IntegracaoTest {
     void produtoAindaSemClassificacaoVemComTagsNulas() {
         produtos.save(new ProdutoEstoque("7894900011517", "COCA COLA 2L PET", "22021000"));
 
-        assertThat(mvc.get().uri("/produtos/7894900011517")).hasStatusOk()
+        assertThat(mvc.get().uri("/produtos/7894900011517").with(comoServico())).hasStatusOk()
                 .bodyJson().extractingPath("$.tags").isNull();
     }
 
     @Test
     void skuDesconhecidoResponde404() {
-        assertThat(mvc.get().uri("/produtos/7894900011517")).hasStatus(HttpStatus.NOT_FOUND);
+        assertThat(mvc.get().uri("/produtos/7894900011517").with(comoServico())).hasStatus(HttpStatus.NOT_FOUND);
     }
 }

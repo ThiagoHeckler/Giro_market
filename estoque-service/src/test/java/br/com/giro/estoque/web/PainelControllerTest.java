@@ -61,7 +61,7 @@ class PainelControllerTest extends IntegracaoTest {
         produtos.save(new ProdutoEstoque(LEITE, "LEITE INTEGRAL 1L", "04012010"));
         pedido(LEITE, 12);
 
-        assertThat(mvc.get().uri("/painel/resumo")).hasStatusOk()
+        assertThat(mvc.get().uri("/painel/resumo").with(comoOperador())).hasStatusOk()
                 .bodyJson().isStrictlyEqualTo("""
                         {"skusCadastrados":2,"skusSemSaldo":1,"demandasAbertas":1,"lotesVencendo":1}""");
     }
@@ -70,7 +70,7 @@ class PainelControllerTest extends IntegracaoTest {
     void skuSoComLoteVencidoContaComoSemSaldo() {
         entrada("VENCIDO", 60, hojeMais(-1));
 
-        assertThat(mvc.get().uri("/painel/resumo")).hasStatusOk()
+        assertThat(mvc.get().uri("/painel/resumo").with(comoOperador())).hasStatusOk()
                 .bodyJson().extractingPath("$.skusSemSaldo").isEqualTo(1);
     }
 
@@ -79,7 +79,7 @@ class PainelControllerTest extends IntegracaoTest {
         entrada("L1", 10, hojeMais(5));
         pedido(COCA, 10);
 
-        assertThat(mvc.get().uri("/painel/resumo")).hasStatusOk()
+        assertThat(mvc.get().uri("/painel/resumo").with(comoOperador())).hasStatusOk()
                 .bodyJson().extractingPath("$.lotesVencendo").isEqualTo(0);
     }
 
@@ -90,7 +90,7 @@ class PainelControllerTest extends IntegracaoTest {
         pedido(LEITE, 12);
         pedido(COCA, 30);
 
-        assertThat(mvc.get().uri("/painel/demandas")).hasStatusOk()
+        assertThat(mvc.get().uri("/painel/demandas").with(comoOperador())).hasStatusOk()
                 .bodyJson().isLenientlyEqualTo("""
                         [{"sku":"7891000068019","descricao":"LEITE INTEGRAL 1L","qtdSolicitada":12},
                          {"sku":"7894900011517","descricao":"COCA COLA 2L PET","qtdSolicitada":30}]""");
@@ -103,7 +103,7 @@ class PainelControllerTest extends IntegracaoTest {
 
         entrada("L1", 50, hojeMais(60));
 
-        assertThat(mvc.get().uri("/painel/demandas")).hasStatusOk().bodyJson().isStrictlyEqualTo("[]");
+        assertThat(mvc.get().uri("/painel/demandas").with(comoOperador())).hasStatusOk().bodyJson().isStrictlyEqualTo("[]");
     }
 
     @Test
@@ -114,7 +114,7 @@ class PainelControllerTest extends IntegracaoTest {
         jdbc.update("UPDATE outbox_event SET status = 'SENT', enviado_em = now() WHERE payload ->> 'correlationId' = ?",
                 primeiro.eventId().toString());
 
-        var resposta = assertThat(mvc.get().uri("/painel/reposicoes")).hasStatusOk().bodyJson();
+        var resposta = assertThat(mvc.get().uri("/painel/reposicoes").with(comoOperador())).hasStatusOk().bodyJson();
         resposta.isLenientlyEqualTo("""
                 [{"sku":"7894900011517","descricao":"COCA COLA 2L PET","qtd":5,"codigoLote":"L1","entregueEm":null},
                  {"qtd":10,"codigoLote":"L1"}]""");
@@ -128,7 +128,7 @@ class PainelControllerTest extends IntegracaoTest {
         pedido(COCA, 2);
         pedido(COCA, 3);
 
-        assertThat(mvc.get().uri("/painel/reposicoes?limite=2")).hasStatusOk()
+        assertThat(mvc.get().uri("/painel/reposicoes?limite=2").with(comoOperador())).hasStatusOk()
                 .bodyJson().extractingPath("$.length()").isEqualTo(2);
     }
 }
