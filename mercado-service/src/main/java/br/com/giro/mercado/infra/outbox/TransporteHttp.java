@@ -1,5 +1,6 @@
 package br.com.giro.mercado.infra.outbox;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ public class TransporteHttp {
         this.cliente = RestClient.builder()
                 .baseUrl(propriedades.destino().toString())
                 .requestFactory(fabrica)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + propriedades.token())
                 .build();
     }
 

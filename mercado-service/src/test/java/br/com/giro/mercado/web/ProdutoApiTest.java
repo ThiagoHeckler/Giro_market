@@ -29,7 +29,8 @@ class ProdutoApiTest extends IntegracaoTest {
     ProdutoVitrineRepository produtos;
 
     private MockMvcTester.MockMvcRequestBuilder cadastrar(String corpo) {
-        return mvc.post().uri("/produtos").contentType(MediaType.APPLICATION_JSON).content(corpo);
+        return mvc.post().uri("/produtos").contentType(MediaType.APPLICATION_JSON).content(corpo)
+                .with(comoOperador()).with(comCsrf());
     }
 
     private void naVitrine(String sku, String nome, int prateleira, String categoria) {

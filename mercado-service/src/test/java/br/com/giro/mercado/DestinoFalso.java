@@ -1,5 +1,6 @@
 package br.com.giro.mercado;
 
+import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -9,8 +10,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** Servidor HTTP que faz o papel do outro serviço: registra o que recebe e responde o status configurado. */
+/**
+ * Servidor HTTP que faz o papel do outro serviço: registra o que recebe e responde o status configurado.
+ * Como o serviço real, recusa com 401 quem não manda o token de serviço dele.
+ */
 public final class DestinoFalso {
+
+    public static final String TOKEN = "token-do-estoque-nos-testes-0123456789abcdef";
 
     public record Recebido(String tipo, String corpo) {
     }
@@ -30,6 +36,9 @@ public final class DestinoFalso {
             var servidor = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
             servidor.createContext("/eventos", troca -> {
                 try (troca) {
+                    if (semToken(troca)) {
+                        return;
+                    }
                     var corpo = new String(troca.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                     RECEBIDOS.add(new Recebido(troca.getRequestHeaders().getFirst("Evento-Tipo"), corpo));
                     troca.sendResponseHeaders(status, -1);
@@ -37,6 +46,9 @@ public final class DestinoFalso {
             });
             servidor.createContext("/produtos/", troca -> {
                 try (troca) {
+                    if (semToken(troca)) {
+                        return;
+                    }
                     var sku = troca.getRequestURI().getPath().substring("/produtos/".length());
                     int codigo = statusProduto == null ? 200 : statusProduto;
                     var corpo = corpoProduto != null ? corpoProduto : """
@@ -54,6 +66,15 @@ public final class DestinoFalso {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    /** Responde 401 e devolve true se a chamada não trouxe o token deste destino. */
+    private static boolean semToken(HttpExchange troca) throws IOException {
+        if (("Bearer " + TOKEN).equals(troca.getRequestHeaders().getFirst("Authorization"))) {
+            return false;
+        }
+        troca.sendResponseHeaders(401, -1);
+        return true;
     }
 
     public static String url() {

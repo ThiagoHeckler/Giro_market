@@ -1,6 +1,10 @@
 spring:
   application:
     name: mercado-service
+  config:
+    # Em dev, os segredos vêm do .env da raiz (o mesmo que o compose lê). No contêiner o arquivo
+    # não existe e valem as variáveis de ambiente.
+    import: optional:file:../.env[.properties]
   threads:
     virtual:
       enabled: true
@@ -21,6 +25,20 @@ spring:
 
 server:
   port: ${MERCADO_PORTA:18080}
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        # Nome próprio: em localhost os cookies não separam por porta, e o estoque tem o dele.
+        name: MERCADO_SESSAO
+        same-site: strict
+
+seguranca:
+  # Token que o mercado exige do estoque em /eventos.
+  token-servico: ${MERCADO_TOKEN_SERVICO:}
+  operador:
+    usuario: ${OPERADOR_USUARIO:}
+    senha: ${OPERADOR_SENHA:}
 
 mercado:
   reserva:
@@ -30,6 +48,8 @@ mercado:
 outbox:
   # Pedidos de reposição vão para o estoque.
   destino: ${ESTOQUE_EVENTOS_URL:http://localhost:18081}
+  # Token que o estoque exige em /eventos.
+  token: ${ESTOQUE_TOKEN_SERVICO:}
   publicador-habilitado: true
   intervalo: 1s
   tamanho-lote: 50
@@ -39,4 +59,5 @@ outbox:
 estoque:
   # Consulta síncrona usada só no cadastro de produto (nunca na venda).
   url: ${ESTOQUE_URL:http://localhost:18081}
+  token: ${ESTOQUE_TOKEN_SERVICO:}
   timeout: 2s

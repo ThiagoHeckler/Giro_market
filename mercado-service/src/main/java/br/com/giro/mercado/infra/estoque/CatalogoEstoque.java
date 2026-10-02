@@ -3,6 +3,7 @@ package br.com.giro.mercado.infra.estoque;
 import br.com.giro.mercado.domain.SkuDesconhecidoNoEstoqueException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -40,6 +41,7 @@ public class CatalogoEstoque {
         this.cliente = RestClient.builder()
                 .baseUrl(propriedades.url().toString())
                 .requestFactory(fabrica)
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + propriedades.token())
                 .build();
     }
 
