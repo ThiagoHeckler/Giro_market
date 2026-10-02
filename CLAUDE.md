@@ -83,7 +83,7 @@ Testes: `./mvnw test` em cada serviço Java (Docker precisa estar no ar), `uv ru
 
 ## Estado atual (atualizado em 2026-10-02)
 
-Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–7 da seção 11 concluídos. Próximo: as pendências abaixo.
+Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–7 da seção 11 concluídos, mais expiração da reserva e pagamento (simulado). Próximo: as pendências abaixo.
 
 | Passo | Entregue |
 |---|---|
@@ -111,11 +111,11 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 - **`reposicao_expedida`**: um registro por `ReposicaoEnviada`, na mesma transação (recall por lote + histórico). A V9 recupera os envios antigos a partir da outbox.
 - **Relógio** (`Clock`) no fuso `America/Sao_Paulo` — pesa só em datas civis (validade de lote).
 - **Segurança** (seção 12 do ARCHITECTURE.md): um token por serviço (quem chama manda o do destino) e um operador só, com sessão + CSRF no padrão SPA (`csrf().spa()`). Uma `SecurityFilterChain` por serviço com regra por rota e `denyAll` no resto. `GET /produtos/{sku}` do estoque aceita os dois papéis (mercado no cadastro, painel na entrada de lote). Checkout anônimo e sem CSRF.
+- **Pagamento e expiração:** `POST /pedidos/{id}/pagamento` é simulado (sem gateway), anônimo e idempotente (já pago → 200). O prazo vale pelo relógio: depois dele, 409 mesmo sem a varredura ter passado. A varredura (`ExpiracaoDeReservas`, a cada 30 s) trava o pedido com `SKIP LOCKED`, trava os produtos em ordem de SKU (a do checkout) e devolve as unidades; pedido vira `EXPIRADO` (V9). A devolução pode passar do `estoqueIdeal` se a reposição já chegou — aceito, sem evento de cancelamento de reposição.
 - **Compose:** estoque e mercado não dependem um do outro para subir (a outbox reenvia). nginx resolve o upstream a cada requisição (`resolver 127.0.0.11`), então sobe com o serviço fora do ar.
 
 ### Pendências conhecidas
 
-- Expiração da reserva (devolver unidades à prateleira) e confirmação de pagamento — não implementadas.
 - Evento que recebe 400 é reenviado para sempre (com backoff até 5 min): falta status `FAILED`/dead-letter.
 - O tag-worker não autentica (só na rede do compose; a porta no host é para dev).
 

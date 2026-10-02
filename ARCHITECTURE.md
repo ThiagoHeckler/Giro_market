@@ -90,6 +90,8 @@ Pede um lote só (diferença até o ideal), nunca uma unidade por venda.
 | Estoque zerado | `ReposicaoNegada` → mercado marca `ESGOTADO` + estoque grava `DemandaReprimida` |
 | Entrada de lote novo | Classifica tags + atende demanda reprimida automaticamente |
 | Overselling | Reserva no **checkout**, não na confirmação do pagamento |
+| Carrinho abandonado | Varredura agendada expira a reserva vencida (`FOR UPDATE SKIP LOCKED`, uma transação por pedido), devolve as unidades e o pedido vira `EXPIRADO`. Pode passar do `estoqueIdeal` se a reposição já chegou: o excesso é no máximo a reserva |
+| Pagamento × expiração | Os dois travam a linha do pedido: só um vence. Pagamento depois do prazo é recusado (409) pelo relógio, mesmo antes da varredura |
 | Duplicata de evento | `InboxEvent` checado antes de processar (idempotência) |
 | Worker de tags fora do ar | Produto salvo **sem** tags; reprocessa depois. Venda nunca depende disso |
 
@@ -137,7 +139,7 @@ ReposicaoExpedida { id, eventId, correlationId, sku, loteId, qtd, expedidoEm }  
 ProdutoVitrine { sku (PK, EAN), nome, tags (JSON),
                  estoquePrateleira, estoqueMinimo, estoqueIdeal, status }  // DISPONIVEL, ESGOTADO
 Reserva        { id, sku, qtd, pedidoId (UUID), expiraEm, status }         // ATIVA, CONFIRMADA, EXPIRADA
-Pedido         { id, ... }        // CRUD padrão
+Pedido         { id, status, total, criadoEm }  // AGUARDANDO_PAGAMENTO, PAGO, EXPIRADO, CANCELADO
 ItemPedido     { id, pedidoId, sku, qtd, precoUnitario }
 ```
 
@@ -234,10 +236,10 @@ Dois tipos de chamador além do cliente anônimo da vitrine:
 |---|---|---|
 | Outro serviço | `Authorization: Bearer <token do destino>`, um token por serviço | `POST /eventos` nos dois; `GET /produtos/{sku}` no estoque |
 | Operador | Sessão em cookie `HttpOnly`/`SameSite=Strict` + token CSRF (cookie legível devolvido em `X-XSRF-TOKEN`) | `/lotes`, `/painel/**` e `GET /produtos/{sku}` no estoque; `POST /produtos` no mercado |
-| Cliente da vitrine | Anônimo | `GET /produtos/**`, `POST /pedidos`, `GET /pedidos/{id}` no mercado |
+| Cliente da vitrine | Anônimo | `GET /produtos/**`, `POST /pedidos`, `GET /pedidos/{id}`, `POST /pedidos/{id}/pagamento` no mercado |
 
 - **Login:** `POST /sessao` (formulário `usuario`/`senha`) → 204; `GET /sessao` diz quem está logado e entrega o cookie CSRF; `DELETE /sessao` encerra. Erros como `ProblemDetail`; 401 sem `WWW-Authenticate` (o navegador não abre o diálogo nativo).
 - **Token de serviço:** só vale na requisição (nunca cria sessão), comparado em tempo constante. Papel `SERVICO` não abre rota de operador e vice-versa. Rota não listada é negada.
-- **CSRF** desligado só onde não há cookie a abusar: `/eventos` (token) e o checkout (anônimo).
+- **CSRF** desligado só onde não há cookie a abusar: `/eventos` (token), o checkout e o pagamento (anônimos).
 - **Segredos** (`ESTOQUE_TOKEN_SERVICO`, `MERCADO_TOKEN_SERVICO`, `OPERADOR_USUARIO`, `OPERADOR_SENHA`) só no `.env`; sem eles o serviço não sobe. Cookies com nome por serviço (`ESTOQUE_SESSAO`, `XSRF-ESTOQUE`, …): em `localhost` os cookies não separam por porta.
 - **Fora do escopo:** o tag-worker não autentica (fica na rede do compose; a porta no host é só para dev) e não há TLS (rede local).
