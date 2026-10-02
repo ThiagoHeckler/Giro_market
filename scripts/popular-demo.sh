@@ -5,16 +5,52 @@
 #      pede o primeiro lote ao estoque.
 # Pão e sabão recebem lotes já vencidos: o estoque não os expede (FEFO), a vitrine mostra
 # "Esgotado" e fica uma demanda reprimida — dê entrada num lote novo e veja voltar sozinho.
+# Entra como operador nos dois serviços (OPERADOR_USUARIO/OPERADOR_SENHA, do ambiente ou do .env).
 set -euo pipefail
 
-ESTOQUE=${ESTOQUE_URL:-http://localhost:18081}
-MERCADO=${MERCADO_URL:-http://localhost:18080}
+RAIZ=$(cd "$(dirname "$0")/.." && pwd)
+if [[ -f "$RAIZ/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$RAIZ/.env"
+  set +a
+fi
+: "${OPERADOR_USUARIO:?defina OPERADOR_USUARIO no .env}"
+: "${OPERADOR_SENHA:?defina OPERADOR_SENHA no .env}"
+
+ESTOQUE=${ESTOQUE_URL:-http://localhost:${ESTOQUE_PORTA:-18081}}
+MERCADO=${MERCADO_URL:-http://localhost:${MERCADO_PORTA:-18080}}
 VALIDADE=$(date -d '+120 days' +%F)
 VENCIDO=$(date -d '-1 day' +%F)
 
-post() { # post URL JSON -> imprime o status HTTP
-  curl -s -o /dev/null -w '%{http_code}' -X POST "$1" -H 'Content-Type: application/json' -d "$2"
+# Uma sessão (cookie jar) por serviço: cada um tem o seu cookie de sessão e de token CSRF.
+SESSOES=$(mktemp -d)
+trap 'rm -rf "$SESSOES"' EXIT
+
+csrf() { # csrf JAR COOKIE -> valor do token CSRF guardado no cookie jar
+  awk -F'\t' -v nome="$2" '$6 == nome { print $7 }' "$1"
 }
+
+entrar() { # entrar URL JAR COOKIE_CSRF
+  curl -s -o /dev/null -c "$2" -b "$2" "$1/sessao"   # entrega o cookie do token CSRF
+  local status
+  status=$(curl -s -o /dev/null -w '%{http_code}' -c "$2" -b "$2" -X POST "$1/sessao" \
+    -H "X-XSRF-TOKEN: $(csrf "$2" "$3")" \
+    --data-urlencode "usuario=$OPERADOR_USUARIO" --data-urlencode "senha=$OPERADOR_SENHA")
+  if [[ "$status" != 204 ]]; then
+    echo "Login de operador em $1 falhou (HTTP $status). Confira OPERADOR_USUARIO/OPERADOR_SENHA." >&2
+    exit 1
+  fi
+  curl -s -o /dev/null -c "$2" -b "$2" "$1/sessao"   # o login troca o token: busca o novo
+}
+
+post() { # post URL JAR COOKIE_CSRF JSON -> imprime o status HTTP
+  curl -s -o /dev/null -w '%{http_code}' -c "$2" -b "$2" -X POST "$1" \
+    -H 'Content-Type: application/json' -H "X-XSRF-TOKEN: $(csrf "$2" "$3")" -d "$4"
+}
+
+entrar "$ESTOQUE" "$SESSOES/estoque" XSRF-ESTOQUE
+entrar "$MERCADO" "$SESSOES/mercado" XSRF-MERCADO
 
 # sku | descrição no estoque | ncm | nome na vitrine | preço | mínimo | ideal | lote | validade
 PRODUTOS=(
@@ -31,14 +67,14 @@ PRODUTOS=(
 echo "Estoque: entrada de lotes (classificação via tag-worker)"
 for linha in "${PRODUTOS[@]}"; do
   IFS='|' read -r sku descricao ncm _ _ _ _ lote validade <<< "$linha"
-  status=$(post "$ESTOQUE/lotes" "{\"sku\":\"$sku\",\"descricao\":\"$descricao\",\"ncm\":\"$ncm\",\"codigoLote\":\"$lote\",\"quantidade\":60,\"validade\":\"$validade\"}")
+  status=$(post "$ESTOQUE/lotes" "$SESSOES/estoque" XSRF-ESTOQUE "{\"sku\":\"$sku\",\"descricao\":\"$descricao\",\"ncm\":\"$ncm\",\"codigoLote\":\"$lote\",\"quantidade\":60,\"validade\":\"$validade\"}")
   printf '  %-28s lote %-10s → HTTP %s\n' "$descricao" "$lote" "$status"
 done
 
 echo "Mercado: cadastro na vitrine (o gatilho pede o primeiro lote)"
 for linha in "${PRODUTOS[@]}"; do
   IFS='|' read -r sku _ _ nome preco minimo ideal _ _ <<< "$linha"
-  status=$(post "$MERCADO/produtos" "{\"sku\":\"$sku\",\"nome\":\"$nome\",\"preco\":$preco,\"estoqueMinimo\":$minimo,\"estoqueIdeal\":$ideal}")
+  status=$(post "$MERCADO/produtos" "$SESSOES/mercado" XSRF-MERCADO "{\"sku\":\"$sku\",\"nome\":\"$nome\",\"preco\":$preco,\"estoqueMinimo\":$minimo,\"estoqueIdeal\":$ideal}")
   printf '  %-28s → HTTP %s\n' "$nome" "$status"
 done
 

@@ -59,6 +59,11 @@ services:
       ESTOQUE_DB_PASSWORD: ${ESTOQUE_DB_PASSWORD:-estoque}
       MERCADO_EVENTOS_URL: http://mercado-service:8080
       TAG_WORKER_URL: http://tag-worker:8000
+      # Segredos só do .env (fora do git); sem eles o compose nem sobe. Ver .env.example.
+      ESTOQUE_TOKEN_SERVICO: ${ESTOQUE_TOKEN_SERVICO:?defina no .env (ver .env.example)}
+      MERCADO_TOKEN_SERVICO: ${MERCADO_TOKEN_SERVICO:?defina no .env (ver .env.example)}
+      OPERADOR_USUARIO: ${OPERADOR_USUARIO:?defina no .env (ver .env.example)}
+      OPERADOR_SENHA: ${OPERADOR_SENHA:?defina no .env (ver .env.example)}
     ports:
       - "${ESTOQUE_PORTA:-18081}:8081"
     depends_on:
@@ -76,6 +81,11 @@ services:
       MERCADO_DB_PASSWORD: ${MERCADO_DB_PASSWORD:-mercado}
       ESTOQUE_EVENTOS_URL: http://estoque-service:8081
       ESTOQUE_URL: http://estoque-service:8081
+      # Segredos só do .env (fora do git); sem eles o compose nem sobe. Ver .env.example.
+      ESTOQUE_TOKEN_SERVICO: ${ESTOQUE_TOKEN_SERVICO:?defina no .env (ver .env.example)}
+      MERCADO_TOKEN_SERVICO: ${MERCADO_TOKEN_SERVICO:?defina no .env (ver .env.example)}
+      OPERADOR_USUARIO: ${OPERADOR_USUARIO:?defina no .env (ver .env.example)}
+      OPERADOR_SENHA: ${OPERADOR_SENHA:?defina no .env (ver .env.example)}
     ports:
       - "${MERCADO_PORTA:-18080}:8080"
     depends_on:

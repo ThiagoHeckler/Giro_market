@@ -25,11 +25,12 @@ Detalhes completos em [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 Tudo em contêineres:
 
 ```bash
+cp .env.example .env                                   # preencha os tokens (openssl rand -hex 32) e a senha do operador
 docker compose up -d --build --wait                    # bancos, serviços, tag-worker e as duas UIs
-scripts/popular-demo.sh                                # produtos de demonstração
+scripts/popular-demo.sh                                # produtos de demonstração (entra como operador)
 ```
 
-Vitrine em http://localhost:15173 e painel do estoque em http://localhost:15174. Cada UI é servida por um nginx que encaminha `/api` para o seu serviço (mesma origem, sem CORS).
+Vitrine em http://localhost:15173 e painel do estoque em http://localhost:15174 (login com `OPERADOR_USUARIO`/`OPERADOR_SENHA` do `.env`). Cada UI é servida por um nginx que encaminha `/api` para o seu serviço (mesma origem, sem CORS).
 
 Em desenvolvimento, só a infraestrutura no compose e o resto com recarga:
 
@@ -43,6 +44,8 @@ docker compose up -d estoque-db mercado-db tag-worker
 
 As portas do host podem ser trocadas no `.env` (`ESTOQUE_PORTA`, `MERCADO_PORTA`, `VITRINE_PORTA`, `ESTOQUE_WEB_PORTA`, `TAG_WORKER_PORTA`, `ESTOQUE_DB_PORTA`, `MERCADO_DB_PORTA`).
 O tag-worker usa a Groq se `GROQ_API_KEY` estiver no `.env` (fora do git); sem ela, classifica por palavras-chave.
+
+Os serviços se autenticam com um token cada um, e o operador entra com sessão + CSRF. Detalhes na seção 12 do [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ## Princípios
 

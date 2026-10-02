@@ -60,7 +60,7 @@ Mensagens em português, no imperativo (`Adiciona outbox no mercado-service`). U
 
 ## Como rodar
 
-O compose sobe tudo: Postgres do estoque em **15433** e do mercado em **15434**, tag-worker em 18000, estoque em 18081, mercado em 18080, vitrine em 15173 e painel em 15174 (portas altas para não colidir com outros projetos locais; todas ajustáveis por variável no `.env`). As UIs são servidas por nginx, que encaminha `/api` para o serviço.
+Antes da primeira vez: `cp .env.example .env` e preencha os tokens e a senha do operador. O compose sobe tudo: Postgres do estoque em **15433** e do mercado em **15434**, tag-worker em 18000, estoque em 18081, mercado em 18080, vitrine em 15173 e painel em 15174 (portas altas para não colidir com outros projetos locais; todas ajustáveis por variável no `.env`). As UIs são servidas por nginx, que encaminha `/api` para o serviço.
 
 ```bash
 docker compose up -d --build --wait
@@ -81,9 +81,9 @@ Testes: `./mvnw test` em cada serviço Java (Docker precisa estar no ar), `uv ru
 
 `GROQ_API_KEY` fica só no `.env` da raiz (ignorado pelo git; o compose e o worker leem de lá). **Nunca** escreva a chave em código, commit ou log. Sem chave, o worker usa o classificador por palavras-chave (é o modo dos testes).
 
-## Estado atual (atualizado em 2026-09-29)
+## Estado atual (atualizado em 2026-10-02)
 
-Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–6 da seção 11 concluídos; **em andamento: Passo 7** — stack completa no `docker-compose` feita; falta a autenticação entre serviços.
+Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–7 da seção 11 concluídos. Próximo: as pendências abaixo.
 
 | Passo | Entregue |
 |---|---|
@@ -93,6 +93,7 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 | 4 | `tag-worker` (FastAPI + Groq `openai/gpt-oss-20b`, JSON Schema estrito); `POST /lotes` com classificação fora da transação e atendimento da demanda reprimida; reclassificação agendada; evento `ProdutoClassificado` |
 | 5 | API REST do mercado (produtos, cadastro, pedidos) + `vitrine-web` (React 18, TanStack Query, tokens gerados) + `scripts/popular-demo.sh` |
 | 6 | `estoque-web` (painel: KPIs, entrada de lote, demanda reprimida, reposições recentes); `GET /painel/*` no estoque; tabela `reposicao_expedida` (V9) |
+| 7 | Stack completa no `docker-compose` (imagens dos serviços Java e das UIs com nginx); Spring Security: token entre serviços + login do operador (seção 12 do ARCHITECTURE.md) |
 
 ### Decisões já tomadas (não relitigar sem motivo novo)
 
@@ -100,7 +101,7 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 - **`SolicitacaoReposicao`** (mercado) responde `temSolicitacaoPendente`: estados `PENDENTE`, `AGUARDANDO_LOTE` (negada por falta de saldo — continua bloqueando novos pedidos, o estoque atende sozinho na entrada de lote), `ATENDIDA`, `CANCELADA` (SKU desconhecido). Índice único parcial garante uma em aberto por SKU.
 - **Um `ReposicaoEnviada` = um lote** (rastreabilidade para recall). Pedido maior que o lote envia o que o lote tem; o mercado reavalia o gatilho após cada crédito e pede o resto.
 - **Saldo por lote** (`lote.quantidade_disponivel`), expedição FEFO ignorando vencidos. Invariante no domínio: `saldo_disponivel` = soma dos lotes; `Lote` só nasce por `ProdutoEstoque.receberLote`.
-- **Transporte de eventos:** `POST {destino}/eventos` com header `Evento-Tipo`; 204 também para duplicata; 400 para evento inválido. Entrega at-least-once. Sem autenticação entre serviços ainda (pendente, Passo 7).
+- **Transporte de eventos:** `POST {destino}/eventos` com header `Evento-Tipo`; 204 também para duplicata; 400 para evento inválido. Entrega at-least-once. Autenticado com o token de serviço do destino.
 - **Contratos** implementam a interface selada `EventoIntegracao` (`ReposicaoSolicitada`, `ReposicaoEnviada`, `ReposicaoNegada`, `ProdutoClassificado`); `motivo` é o enum `MotivoNegacao`. Fixtures JSON idênticos em `src/test/resources/contratos/` dos dois serviços.
 - **`ProdutoClassificado`**: publicado na mesma transação que grava as tags (`ClassificacaoDeProduto`); o mercado só aplica classificação mais nova (`classificado_em`). No cadastro, o mercado herda a classificação via `GET /produtos/{sku}` do estoque.
 - **Cadastro na vitrine** entra com prateleira 0 e o próprio gatilho pede o primeiro lote. SKU desconhecido no estoque → 422; estoque fora do ar → cadastra sem classificação.
@@ -109,12 +110,14 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 - **Painel do estoque em React** (`estoque-web`, app separado da vitrine), não Thymeleaf + HTMX como previa a primeira versão do ARCHITECTURE.md. Só lê dados do estoque: nada de "abaixo do mínimo" ou "esgotados no mercado" (isso é do mercado). KPI "sem saldo válido" conta saldo **expedível** (zerado ou só lotes vencidos); status da reposição = entrega do evento na outbox (`enviado_em`).
 - **`reposicao_expedida`**: um registro por `ReposicaoEnviada`, na mesma transação (recall por lote + histórico). A V9 recupera os envios antigos a partir da outbox.
 - **Relógio** (`Clock`) no fuso `America/Sao_Paulo` — pesa só em datas civis (validade de lote).
+- **Segurança** (seção 12 do ARCHITECTURE.md): um token por serviço (quem chama manda o do destino) e um operador só, com sessão + CSRF no padrão SPA (`csrf().spa()`). Uma `SecurityFilterChain` por serviço com regra por rota e `denyAll` no resto. `GET /produtos/{sku}` do estoque aceita os dois papéis (mercado no cadastro, painel na entrada de lote). Checkout anônimo e sem CSRF.
+- **Compose:** estoque e mercado não dependem um do outro para subir (a outbox reenvia). nginx resolve o upstream a cada requisição (`resolver 127.0.0.11`), então sobe com o serviço fora do ar.
 
 ### Pendências conhecidas
 
 - Expiração da reserva (devolver unidades à prateleira) e confirmação de pagamento — não implementadas.
 - Evento que recebe 400 é reenviado para sempre (com backoff até 5 min): falta status `FAILED`/dead-letter.
-- Autenticação entre serviços em `/eventos` e `/produtos` do estoque; `/lotes` e `/painel` (usados pelo `estoque-web`) também estão abertos.
+- O tag-worker não autentica (só na rede do compose; a porta no host é para dev).
 
 ### Convenções que surgiram na prática
 
@@ -125,4 +128,6 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 - Testes de integração estendem `IntegracaoTest` (um contexto e um container para a suíte, `TRUNCATE` a cada teste, agendadores desligados). `DestinoFalso`/`WorkerFalso` são servidores HTTP do JDK que fazem o papel do outro serviço. `ContratoTagWorkerTest` sobe o tag-worker real a partir do `Dockerfile`.
 - Todo `switch` sobre `EventoIntegracao` é exaustivo — novo evento quebra a compilação onde precisa ser tratado.
 - `vitrine-web` e `estoque-web`: nenhuma cor/medida solta (cada app tem sua cópia de `scripts/gerar-tokens.mjs`, como os contratos); `src/styles/tokens.css` é gerado por `npm run tokens` (roda sozinho antes de `dev`, `build` e `test`) e não vai para o git. Tons suaves via `color-mix()` sobre tokens.
+- Segredos só no `.env` da raiz (modelo em `.env.example`). Os serviços Java o importam em dev (`spring.config.import: optional:file:../.env[.properties]`); no contêiner valem as variáveis de ambiente.
+- Testes de rota protegida: `comoServico()`, `comoOperador()` e `comCsrf()` do `IntegracaoTest`. **Não use o `csrf()` do spring-security-test**: ele troca para sempre o repositório do `CsrfFilter` (bean compartilhado entre os testes) por um de sessão, e os testes do cookie passam a falhar conforme a ordem. `DestinoFalso` exige o token, então todo teste de envio já cobre o header.
 - Fluxo de trabalho: um passo por vez, testes verdes, parar para revisão; commits em unidades lógicas, cada um verificado isoladamente (build + testes num `git worktree`).

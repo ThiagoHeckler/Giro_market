@@ -188,7 +188,8 @@ FastAPI + Pydantic. O estoque chama na entrada de lote. Timeout curto; falha = s
 - **Python 3.12 + FastAPI + Pydantic** — worker de tags
 - **React + Vite** — vitrine
 - **React + Vite** — painel do estoque (`estoque-web`), app interno separado da vitrine
-- **Docker Compose** — orquestração local
+- **Spring Security 7** — token entre serviços e sessão do operador (seção 12)
+- **Docker Compose** — orquestração local; as UIs servidas por nginx, que encaminha `/api` ao serviço
 
 ---
 
@@ -222,3 +223,21 @@ estoque-2.0/
 5. `vitrine-web` React consumindo o mercado
 6. `estoque-web` React: painel do estoque
 7. Docker Compose amarrando tudo
+
+---
+
+## 12. Segurança
+
+Dois tipos de chamador além do cliente anônimo da vitrine:
+
+| Quem | Como entra | Onde |
+|---|---|---|
+| Outro serviço | `Authorization: Bearer <token do destino>`, um token por serviço | `POST /eventos` nos dois; `GET /produtos/{sku}` no estoque |
+| Operador | Sessão em cookie `HttpOnly`/`SameSite=Strict` + token CSRF (cookie legível devolvido em `X-XSRF-TOKEN`) | `/lotes`, `/painel/**` e `GET /produtos/{sku}` no estoque; `POST /produtos` no mercado |
+| Cliente da vitrine | Anônimo | `GET /produtos/**`, `POST /pedidos`, `GET /pedidos/{id}` no mercado |
+
+- **Login:** `POST /sessao` (formulário `usuario`/`senha`) → 204; `GET /sessao` diz quem está logado e entrega o cookie CSRF; `DELETE /sessao` encerra. Erros como `ProblemDetail`; 401 sem `WWW-Authenticate` (o navegador não abre o diálogo nativo).
+- **Token de serviço:** só vale na requisição (nunca cria sessão), comparado em tempo constante. Papel `SERVICO` não abre rota de operador e vice-versa. Rota não listada é negada.
+- **CSRF** desligado só onde não há cookie a abusar: `/eventos` (token) e o checkout (anônimo).
+- **Segredos** (`ESTOQUE_TOKEN_SERVICO`, `MERCADO_TOKEN_SERVICO`, `OPERADOR_USUARIO`, `OPERADOR_SENHA`) só no `.env`; sem eles o serviço não sobe. Cookies com nome por serviço (`ESTOQUE_SESSAO`, `XSRF-ESTOQUE`, …): em `localhost` os cookies não separam por porta.
+- **Fora do escopo:** o tag-worker não autentica (fica na rede do compose; a porta no host é só para dev) e não há TLS (rede local).
