@@ -34,7 +34,8 @@ class OutboxInboxTest extends IntegracaoTest {
                         "V5__cria_outbox_event.sql",
                         "V6__cria_inbox_event.sql",
                         "V7__adiciona_controle_de_envio_ao_outbox.sql",
-                        "V8__adiciona_classificacao_ao_produto_vitrine.sql");
+                        "V8__adiciona_classificacao_ao_produto_vitrine.sql",
+                        "V9__adiciona_status_expirado_ao_pedido.sql");
     }
 
     @Test

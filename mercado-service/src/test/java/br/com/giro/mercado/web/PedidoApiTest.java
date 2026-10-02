@@ -46,6 +46,39 @@ class PedidoApiTest extends IntegracaoTest {
         assertThat(mvc.get().uri(location)).bodyJson().extractingPath("$.reservaExpiraEm").isNotNull();
     }
 
+    private String fecharPedido() {
+        naVitrine("7894900011517", "Coca-Cola 2L", "8.99", 10);
+        return checkout("""
+                {"itens":[{"sku":"7894900011517","qtd":2}]}""").exchange()
+                .getMvcResult().getResponse().getHeader("Location");
+    }
+
+    @Test
+    void pagamentoAnonimoConfirmaOPedido() {
+        var pedido = fecharPedido();
+
+        assertThat(mvc.post().uri(pedido + "/pagamento")).hasStatusOk()
+                .bodyJson().extractingPath("$.status").isEqualTo("PAGO");
+        // Repetir (duplo clique, nova tentativa da rede) devolve o mesmo pedido pago.
+        assertThat(mvc.post().uri(pedido + "/pagamento")).hasStatusOk()
+                .bodyJson().extractingPath("$.status").isEqualTo("PAGO");
+    }
+
+    @Test
+    void pagamentoDepoisDoPrazoResponde409() {
+        var pedido = fecharPedido();
+        jdbc.update("UPDATE reserva SET expira_em = now() - interval '1 minute'");
+
+        assertThat(mvc.post().uri(pedido + "/pagamento")).hasStatus(HttpStatus.CONFLICT)
+                .bodyJson().extractingPath("$.title").isEqualTo("Pagamento recusado");
+    }
+
+    @Test
+    void pagamentoDePedidoInexistenteResponde404() {
+        assertThat(mvc.post().uri("/pedidos/00000000-0000-0000-0000-000000000000/pagamento"))
+                .hasStatus(HttpStatus.NOT_FOUND);
+    }
+
     @Test
     void faltaDeEstoqueResponde409ApontandoOSku() {
         naVitrine("7894900011517", "Coca-Cola 2L", "8.99", 1);

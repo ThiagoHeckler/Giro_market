@@ -61,6 +61,31 @@ public class Pedido {
         total = total.add(item.subtotal());
     }
 
+    /**
+     * Confirma o pagamento. O prazo é da reserva, conferido por quem chama.
+     *
+     * @return {@code false} se o pedido já estava pago (pagamento repetido não muda nada)
+     * @throws PagamentoRecusadoException se o pedido não está mais aguardando pagamento
+     */
+    public boolean pagar() {
+        if (status == StatusPedido.PAGO) {
+            return false;
+        }
+        if (status != StatusPedido.AGUARDANDO_PAGAMENTO) {
+            throw new PagamentoRecusadoException(id, status);
+        }
+        status = StatusPedido.PAGO;
+        return true;
+    }
+
+    /** O prazo da reserva acabou sem pagamento. */
+    public void expirar() {
+        if (status != StatusPedido.AGUARDANDO_PAGAMENTO) {
+            throw new IllegalStateException("só pedido aguardando pagamento expira: %s está %s".formatted(id, status));
+        }
+        status = StatusPedido.EXPIRADO;
+    }
+
     public UUID getId() {
         return id;
     }

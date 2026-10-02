@@ -111,6 +111,14 @@ public class ProdutoVitrine {
     }
 
     /**
+     * Devolve unidades de uma reserva expirada. Pode passar do {@code estoqueIdeal} se a venda já
+     * tinha disparado reposição: o excesso é no máximo a reserva, e o gatilho só volta abaixo do mínimo.
+     */
+    public void devolver(int qtd) {
+        creditar(qtd);
+    }
+
+    /**
      * Estoque sem saldo para repor. Se a prateleira já está vazia, o produto fica ESGOTADO;
      * se ainda restam unidades, elas continuam à venda até zerar.
      */

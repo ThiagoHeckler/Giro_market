@@ -53,6 +53,29 @@ public class Reserva {
         this.status = StatusReserva.ATIVA;
     }
 
+    /** Vence no instante {@code expiraEm}: a partir dele, não se paga mais. */
+    public boolean venceuEm(Instant agora) {
+        return !agora.isBefore(expiraEm);
+    }
+
+    /** Pedido pago: as unidades já debitadas viram venda. */
+    public void confirmar() {
+        exigirAtiva();
+        status = StatusReserva.CONFIRMADA;
+    }
+
+    /** Prazo vencido sem pagamento: quem chama devolve as unidades à prateleira. */
+    public void expirar() {
+        exigirAtiva();
+        status = StatusReserva.EXPIRADA;
+    }
+
+    private void exigirAtiva() {
+        if (status != StatusReserva.ATIVA) {
+            throw new IllegalStateException("reserva %s não está ativa: %s".formatted(id, status));
+        }
+    }
+
     public UUID getId() {
         return id;
     }

@@ -1,6 +1,8 @@
 package br.com.giro.mercado.web;
 
 import br.com.giro.mercado.domain.EstoqueInsuficienteException;
+import br.com.giro.mercado.domain.PagamentoRecusadoException;
+import br.com.giro.mercado.domain.PedidoNaoEncontradoException;
 import br.com.giro.mercado.domain.ProdutoJaCadastradoException;
 import br.com.giro.mercado.domain.ProdutoNaoEncontradoException;
 import br.com.giro.mercado.domain.SkuDesconhecidoNoEstoqueException;
@@ -26,6 +28,18 @@ public class TratamentoDeErros {
     @ExceptionHandler(ProdutoNaoEncontradoException.class)
     ProblemDetail produtoNaoEncontrado(ProdutoNaoEncontradoException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, e.getMessage());
+    }
+
+    @ExceptionHandler(PedidoNaoEncontradoException.class)
+    ProblemDetail pedidoNaoEncontrado(PedidoNaoEncontradoException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(PagamentoRecusadoException.class)
+    ProblemDetail pagamentoRecusado(PagamentoRecusadoException e) {
+        var problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+        problema.setTitle("Pagamento recusado");
+        return problema;
     }
 
     @ExceptionHandler(ProdutoJaCadastradoException.class)

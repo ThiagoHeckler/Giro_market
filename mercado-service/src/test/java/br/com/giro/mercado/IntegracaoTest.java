@@ -31,6 +31,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
         "outbox.token=" + DestinoFalso.TOKEN,
         "estoque.token=" + DestinoFalso.TOKEN,
         "outbox.publicador-habilitado=false",
+        "mercado.reserva.expiracao-habilitada=false",
         "estoque.timeout=500ms"})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)

@@ -51,13 +51,14 @@ public class SegurancaConfig {
                 .authorizeHttpRequests(rotas -> rotas
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/sessao").permitAll()
                         .requestMatchers(HttpMethod.GET, "/produtos", "/produtos/*", "/pedidos/*").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/pedidos").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/pedidos", "/pedidos/*/pagamento").permitAll()
                         .requestMatchers(HttpMethod.POST, "/eventos").hasRole(Papel.SERVICO.name())
                         .requestMatchers(HttpMethod.POST, "/produtos").hasRole(Papel.OPERADOR.name())
                         .anyRequest().denyAll())
                 .addFilterBefore(new TokenServicoFilter(seguranca.tokenServico()), UsernamePasswordAuthenticationFilter.class)
-                // Checkout fora do CSRF: é anônimo, não há sessão de cliente a ser usada por outro site.
-                .csrf(csrf -> csrf.spa().csrfTokenRepository(tokensCsrf).ignoringRequestMatchers("/eventos", "/pedidos"))
+                // Checkout e pagamento fora do CSRF: são anônimos, não há sessão de cliente a ser usada por outro site.
+                .csrf(csrf -> csrf.spa().csrfTokenRepository(tokensCsrf)
+                        .ignoringRequestMatchers("/eventos", "/pedidos", "/pedidos/*/pagamento"))
                 .formLogin(login -> login
                         // loginPage próprio desliga a página HTML gerada pelo Spring; o front tem a sua.
                         .loginPage("/sessao")

@@ -44,6 +44,10 @@ mercado:
   reserva:
     # Tempo que o item fica reservado entre o checkout e a confirmação do pagamento.
     ttl: 15m
+    # Varredura que devolve à prateleira as reservas vencidas sem pagamento.
+    expiracao-habilitada: true
+    intervalo-expiracao: 30s
+    lote-expiracao: 50
 
 outbox:
   # Pedidos de reposição vão para o estoque.
