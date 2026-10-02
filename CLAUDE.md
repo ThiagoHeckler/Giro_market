@@ -81,7 +81,7 @@ Testes: `./mvnw test` em cada serviço Java (Docker precisa estar no ar), `uv ru
 
 `GROQ_API_KEY` fica só no `.env` da raiz (ignorado pelo git; o compose e o worker leem de lá). **Nunca** escreva a chave em código, commit ou log. Sem chave, o worker usa o classificador por palavras-chave (é o modo dos testes).
 
-## Estado atual (atualizado em 2026-10-02)
+## Estado atual (atualizado em 2026-10-02, fim da sessão)
 
 Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do GitHub só conta commits na branch padrão). Passos 1–7 da seção 11 concluídos, mais expiração da reserva e pagamento (simulado). Próximo: as pendências abaixo.
 
@@ -118,6 +118,12 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 
 - Evento que recebe 400 é reenviado para sempre (com backoff até 5 min): falta status `FAILED`/dead-letter.
 - O tag-worker não autentica (só na rede do compose; a porta no host é para dev).
+
+### Próximos passos (na ordem combinada)
+
+1. **Merge na `main`** dos commits da `developer` desde o último merge (fast-forward, para contar no calendário do GitHub).
+2. **Dead-letter na outbox** (nos dois serviços): 4xx do destino não melhora com nova tentativa → status `FAILED` com `ultimo_erro`, sem reenvio; 5xx e falha de rede seguem com backoff. Mostrar a contagem de `FAILED` no painel do estoque.
+3. **Autenticação no tag-worker**: token Bearer como entre os serviços Java (FastAPI), enviado pelo `ClassificadorTags` do estoque.
 
 ### Convenções que surgiram na prática
 
