@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { estoque } from "../api/estoque";
+import { estoque, type ReposicaoRecente } from "../api/estoque";
 import { quando } from "../util/tempo";
 import { Carregando, FalhaAoCarregar, Vazio } from "./Estados";
 
@@ -41,9 +41,7 @@ export function TabelaReposicoes() {
                   <td className="tabela__numero mono">{r.qtd}</td>
                   <td className="mono">{r.codigoLote}</td>
                   <td>
-                    {r.entregueEm
-                      ? <span className="selo selo--entregue">entregue</span>
-                      : <span className="selo selo--enviando">enviando</span>}
+                    <SeloEntrega reposicao={r} />
                   </td>
                 </tr>
               ))}
@@ -53,4 +51,10 @@ export function TabelaReposicoes() {
       )}
     </section>
   );
+}
+
+function SeloEntrega({ reposicao }: { reposicao: ReposicaoRecente }) {
+  if (reposicao.entregueEm) return <span className="selo selo--entregue">entregue</span>;
+  if (reposicao.entregaFalhou) return <span className="selo selo--falhou">falhou</span>;
+  return <span className="selo selo--enviando">enviando</span>;
 }

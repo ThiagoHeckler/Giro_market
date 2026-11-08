@@ -9,6 +9,7 @@ const KPIS: { chave: keyof Resumo; rotulo: string; tom: Tom }[] = [
   { chave: "skusSemSaldo", rotulo: "SKUs sem saldo válido", tom: "perigo" },
   { chave: "demandasAbertas", rotulo: "Demanda reprimida", tom: "alerta" },
   { chave: "lotesVencendo", rotulo: "Lotes vencendo em 30 dias", tom: "brand-2" },
+  { chave: "eventosComFalha", rotulo: "Eventos com falha", tom: "perigo" },
 ];
 
 const numero = new Intl.NumberFormat("pt-BR");

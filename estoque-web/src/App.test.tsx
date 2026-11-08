@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import { App } from "./App";
 import { json, renderizar, simularApi } from "./testes/renderizar";
 
-const RESUMO = { skusCadastrados: 1248, skusSemSaldo: 5, demandasAbertas: 2, lotesVencendo: 3 };
+const RESUMO = { skusCadastrados: 1248, skusSemSaldo: 5, demandasAbertas: 2, lotesVencendo: 3, eventosComFalha: 1 };
 
 function apiDoPainel(sobrescrever: Record<string, () => Response> = {}) {
   return simularApi({
@@ -16,11 +16,15 @@ function apiDoPainel(sobrescrever: Record<string, () => Response> = {}) {
       json([
         {
           eventId: "a", sku: "7894900011517", descricao: "COCA COLA 2L PET", qtd: 18, codigoLote: "LT-2287",
-          expedidoEm: "2026-09-29T12:15:00Z", entregueEm: null,
+          expedidoEm: "2026-09-29T12:15:00Z", entregueEm: null, entregaFalhou: false,
         },
         {
           eventId: "b", sku: "7891000068019", descricao: "LEITE INTEGRAL 1L", qtd: 15, codigoLote: "LT-2288",
-          expedidoEm: "2026-09-29T12:00:00Z", entregueEm: "2026-09-29T12:00:01Z",
+          expedidoEm: "2026-09-29T12:00:00Z", entregueEm: "2026-09-29T12:00:01Z", entregaFalhou: false,
+        },
+        {
+          eventId: "c", sku: "7896005800010", descricao: "ARROZ TIPO 1 5KG", qtd: 10, codigoLote: "LT-2280",
+          expedidoEm: "2026-09-29T11:00:00Z", entregueEm: null, entregaFalhou: true,
         },
       ]),
     ...sobrescrever,
@@ -40,6 +44,7 @@ describe("Painel do estoque", () => {
     expect(kpi("SKUs sem saldo válido")).toHaveTextContent("5");
     expect(kpi("Demanda reprimida")).toHaveTextContent("2");
     expect(kpi("Lotes vencendo em 30 dias")).toHaveTextContent("3");
+    expect(kpi("Eventos com falha")).toHaveTextContent("1");
   });
 
   it("lista a demanda reprimida em ordem de atendimento", async () => {
@@ -60,11 +65,13 @@ describe("Painel do estoque", () => {
     renderizar(<App />);
 
     const secao = await screen.findByRole("region", { name: "Reposições recentes" });
-    const [enviando, entregue] = (await within(secao).findAllByRole("row")).slice(1);
+    const [enviando, entregue, falhou] = (await within(secao).findAllByRole("row")).slice(1);
     expect(enviando).toHaveTextContent("LT-2287");
     expect(enviando).toHaveTextContent("enviando");
     expect(entregue).toHaveTextContent("LT-2288");
     expect(entregue).toHaveTextContent("entregue");
+    expect(falhou).toHaveTextContent("LT-2280");
+    expect(falhou).toHaveTextContent("falhou");
   });
 
   it("sem demanda em aberto mostra estado vazio", async () => {
