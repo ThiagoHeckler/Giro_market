@@ -85,9 +85,18 @@ public class OutboxEvent implements Persistable<UUID> {
     public void agendarNovaTentativa(String erro, Instant quando) {
         this.tentativas++;
         this.proximaTentativaEm = quando;
-        this.ultimoErro = erro == null || erro.length() <= TAMANHO_MAXIMO_ERRO
-                ? erro
-                : erro.substring(0, TAMANHO_MAXIMO_ERRO);
+        this.ultimoErro = truncar(erro);
+    }
+
+    /** O destino rejeitou o evento de vez: sai do polling e fica como dead-letter. */
+    public void marcarFalhou(String erro) {
+        this.status = StatusOutbox.FAILED;
+        this.tentativas++;
+        this.ultimoErro = truncar(erro);
+    }
+
+    private static String truncar(String erro) {
+        return erro == null || erro.length() <= TAMANHO_MAXIMO_ERRO ? erro : erro.substring(0, TAMANHO_MAXIMO_ERRO);
     }
 
     @PostLoad
