@@ -113,15 +113,16 @@ Branch de trabalho: `developer` (a `main` só recebe merge — o calendário do 
 - **Segurança** (seção 12 do ARCHITECTURE.md): um token por serviço (quem chama manda o do destino) e um operador só, com sessão + CSRF no padrão SPA (`csrf().spa()`). Uma `SecurityFilterChain` por serviço com regra por rota e `denyAll` no resto. `GET /produtos/{sku}` do estoque aceita os dois papéis (mercado no cadastro, painel na entrada de lote). Checkout anônimo e sem CSRF.
 - **Pagamento e expiração:** `POST /pedidos/{id}/pagamento` é simulado (sem gateway), anônimo e idempotente (já pago → 200). O prazo vale pelo relógio: depois dele, 409 mesmo sem a varredura ter passado. A varredura (`ExpiracaoDeReservas`, a cada 30 s) trava o pedido com `SKIP LOCKED`, trava os produtos em ordem de SKU (a do checkout) e devolve as unidades; pedido vira `EXPIRADO` (V9). A devolução pode passar do `estoqueIdeal` se a reposição já chegou — aceito, sem evento de cancelamento de reposição.
 - **Dead-letter na outbox** (V10 nos dois serviços): recusa definitiva do destino (4xx exceto 401, 403, 408 e 429) vira `FAILED` com `ultimo_erro`, sem reenvio. 401/403 seguem com backoff porque são token errado (corrige-se o `.env` e o fluxo volta sozinho); 408/429 são temporários; 5xx e rede também seguem com backoff. Painel do estoque: KPI "Eventos com falha" e selo "falhou" na reposição. Sem endpoint de reprocessamento: reenfileirar à mão com `UPDATE outbox_event SET status = 'PENDING', proxima_tentativa_em = now() WHERE id = '<eventId>';`.
+- **Token no tag-worker:** `TAG_WORKER_TOKEN_SERVICO` (32+ caracteres; sem ele o worker e o estoque não sobem), exigido em `POST /classificar` e mandado pelo `ClassificadorTags`. `/saude` aberta (healthcheck). O mercado não fala com o worker. O app sobe por fábrica (`uvicorn app.main:criar_app --factory`): a configuração só é lida ao subir, nunca no import (os testes importam o módulo sem `.env`).
 - **Compose:** estoque e mercado não dependem um do outro para subir (a outbox reenvia). nginx resolve o upstream a cada requisição (`resolver 127.0.0.11`), então sobe com o serviço fora do ar.
 
 ### Pendências conhecidas
 
-- O tag-worker não autentica (só na rede do compose; a porta no host é para dev).
+- Nenhuma registrada.
 
 ### Próximos passos (na ordem combinada)
 
-1. **Autenticação no tag-worker**: token Bearer como entre os serviços Java (FastAPI), enviado pelo `ClassificadorTags` do estoque.
+Passos combinados concluídos; o próximo precisa ser definido.
 
 ### Convenções que surgiram na prática
 

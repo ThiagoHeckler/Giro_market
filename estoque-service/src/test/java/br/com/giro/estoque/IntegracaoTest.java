@@ -35,6 +35,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
         "seguranca.operador.usuario=" + IntegracaoTest.OPERADOR,
         "seguranca.operador.senha=" + IntegracaoTest.SENHA_OPERADOR,
         "outbox.token=" + DestinoFalso.TOKEN,
+        "tags.token=" + WorkerFalso.TOKEN,
         "outbox.publicador-habilitado=false",
         "tags.reclassificacao-habilitada=false",
         "tags.timeout=500ms"})

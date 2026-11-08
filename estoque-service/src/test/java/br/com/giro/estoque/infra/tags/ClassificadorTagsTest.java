@@ -23,6 +23,12 @@ class ClassificadorTagsTest extends IntegracaoTest {
     }
 
     @Test
+    void mandaOTokenDeServicoDoWorker() {
+        // WorkerFalso recusa com 401 sem o token: classificação presente prova que o header foi.
+        assertThat(classificador.classificar("7894900011517", "COCA COLA 2L PET")).isPresent();
+    }
+
+    @Test
     void respostaSemTagsEhTratadaComoIndisponivel() {
         WorkerFalso.responderCom(200, "{\"tags\":[],\"categoria\":\"bebidas\"}");
 

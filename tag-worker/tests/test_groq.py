@@ -6,8 +6,8 @@ import respx
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from app.config import Configuracao
 from app.main import criar_app
+from tests.conftest import AUTORIZADO, configuracao
 
 URL = "https://groq.teste/v1/chat/completions"
 PEDIDO = {"sku": "7894900011517", "descricao": "COCA COLA 2L PET"}
@@ -20,8 +20,8 @@ def resposta_llm(conteudo: dict | str) -> httpx.Response:
 
 @pytest.fixture
 def cliente():
-    configuracao = Configuracao(groq_api_key=SecretStr("gsk_teste"), groq_url=URL, _env_file=None)
-    with TestClient(criar_app(configuracao)) as c:
+    with TestClient(criar_app(configuracao(groq_api_key=SecretStr("gsk_teste"), groq_url=URL)),
+                    headers=AUTORIZADO) as c:
         yield c
 
 
