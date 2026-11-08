@@ -63,7 +63,7 @@ class PainelControllerTest extends IntegracaoTest {
 
         assertThat(mvc.get().uri("/painel/resumo").with(comoOperador())).hasStatusOk()
                 .bodyJson().isStrictlyEqualTo("""
-                        {"skusCadastrados":2,"skusSemSaldo":1,"demandasAbertas":1,"lotesVencendo":1}""");
+                        {"skusCadastrados":2,"skusSemSaldo":1,"demandasAbertas":1,"lotesVencendo":1,"eventosComFalha":0}""");
     }
 
     @Test
@@ -116,9 +116,24 @@ class PainelControllerTest extends IntegracaoTest {
 
         var resposta = assertThat(mvc.get().uri("/painel/reposicoes").with(comoOperador())).hasStatusOk().bodyJson();
         resposta.isLenientlyEqualTo("""
-                [{"sku":"7894900011517","descricao":"COCA COLA 2L PET","qtd":5,"codigoLote":"L1","entregueEm":null},
-                 {"qtd":10,"codigoLote":"L1"}]""");
+                [{"sku":"7894900011517","descricao":"COCA COLA 2L PET","qtd":5,"codigoLote":"L1","entregueEm":null,
+                  "entregaFalhou":false},
+                 {"qtd":10,"codigoLote":"L1","entregaFalhou":false}]""");
         resposta.extractingPath("$[1].entregueEm").isNotNull();
+    }
+
+    @Test
+    void eventoRecusadoPeloMercadoApareceNoResumoENaReposicao() {
+        entrada("L1", 50, hojeMais(60));
+        var pedido = pedido(COCA, 10);
+        jdbc.update("UPDATE outbox_event SET status = 'FAILED' WHERE payload ->> 'correlationId' = ?",
+                pedido.eventId().toString());
+
+        assertThat(mvc.get().uri("/painel/resumo").with(comoOperador())).hasStatusOk()
+                .bodyJson().extractingPath("$.eventosComFalha").isEqualTo(1);
+        assertThat(mvc.get().uri("/painel/reposicoes").with(comoOperador())).hasStatusOk()
+                .bodyJson().isLenientlyEqualTo("""
+                        [{"qtd":10,"entregueEm":null,"entregaFalhou":true}]""");
     }
 
     @Test

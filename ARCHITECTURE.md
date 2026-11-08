@@ -234,12 +234,13 @@ Dois tipos de chamador além do cliente anônimo da vitrine:
 
 | Quem | Como entra | Onde |
 |---|---|---|
-| Outro serviço | `Authorization: Bearer <token do destino>`, um token por serviço | `POST /eventos` nos dois; `GET /produtos/{sku}` no estoque |
+| Outro serviço | `Authorization: Bearer <token do destino>`, um token por serviço | `POST /eventos` nos dois; `GET /produtos/{sku}` no estoque; `POST /classificar` no tag-worker (só o estoque chama) |
 | Operador | Sessão em cookie `HttpOnly`/`SameSite=Strict` + token CSRF (cookie legível devolvido em `X-XSRF-TOKEN`) | `/lotes`, `/painel/**` e `GET /produtos/{sku}` no estoque; `POST /produtos` no mercado |
 | Cliente da vitrine | Anônimo | `GET /produtos/**`, `POST /pedidos`, `GET /pedidos/{id}`, `POST /pedidos/{id}/pagamento` no mercado |
 
 - **Login:** `POST /sessao` (formulário `usuario`/`senha`) → 204; `GET /sessao` diz quem está logado e entrega o cookie CSRF; `DELETE /sessao` encerra. Erros como `ProblemDetail`; 401 sem `WWW-Authenticate` (o navegador não abre o diálogo nativo).
 - **Token de serviço:** só vale na requisição (nunca cria sessão), comparado em tempo constante. Papel `SERVICO` não abre rota de operador e vice-versa. Rota não listada é negada.
 - **CSRF** desligado só onde não há cookie a abusar: `/eventos` (token), o checkout e o pagamento (anônimos).
-- **Segredos** (`ESTOQUE_TOKEN_SERVICO`, `MERCADO_TOKEN_SERVICO`, `OPERADOR_USUARIO`, `OPERADOR_SENHA`) só no `.env`; sem eles o serviço não sobe. Cookies com nome por serviço (`ESTOQUE_SESSAO`, `XSRF-ESTOQUE`, …): em `localhost` os cookies não separam por porta.
-- **Fora do escopo:** o tag-worker não autentica (fica na rede do compose; a porta no host é só para dev) e não há TLS (rede local).
+- **Segredos** (`ESTOQUE_TOKEN_SERVICO`, `MERCADO_TOKEN_SERVICO`, `TAG_WORKER_TOKEN_SERVICO`, `OPERADOR_USUARIO`, `OPERADOR_SENHA`) só no `.env`; sem eles o serviço não sobe. Cookies com nome por serviço (`ESTOQUE_SESSAO`, `XSRF-ESTOQUE`, …): em `localhost` os cookies não separam por porta.
+- **tag-worker:** exige o próprio token em `POST /classificar` (dependência do FastAPI, comparação em tempo constante, 401 sem `WWW-Authenticate`); `GET /saude` fica aberta para o healthcheck. Token recusado é só mais uma falha do worker: o produto segue sem tags e a reclassificação tenta depois.
+- **Fora do escopo:** não há TLS (rede local).

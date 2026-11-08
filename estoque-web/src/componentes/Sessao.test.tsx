@@ -5,7 +5,7 @@ import { COOKIE_CSRF } from "../api/estoque";
 import { json, OPERADOR, renderizar, semConteudo, simularApi } from "../testes/renderizar";
 
 const PAINEL = {
-  "GET /api/painel/resumo": () => json({ skusCadastrados: 1, skusSemSaldo: 0, demandasAbertas: 0, lotesVencendo: 0 }),
+  "GET /api/painel/resumo": () => json({ skusCadastrados: 1, skusSemSaldo: 0, demandasAbertas: 0, lotesVencendo: 0, eventosComFalha: 0 }),
   "GET /api/painel/demandas": () => json([]),
   "GET /api/painel/reposicoes?limite=20": () => json([]),
 };

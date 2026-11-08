@@ -10,7 +10,8 @@ import java.time.Duration;
 
 /**
  * Lê a outbox e entrega os eventos. Entrega é at-least-once: se o commit falhar depois do envio,
- * o evento sai de novo e a inbox do destino descarta a duplicata.
+ * o evento sai de novo e a inbox do destino descarta a duplicata. Recusa definitiva do destino
+ * (ver {@link TransporteHttp}) vira {@link StatusOutbox#FAILED}; as demais falhas são reenviadas com backoff.
  */
 @Component
 public class PublicadorOutbox {
@@ -40,6 +41,10 @@ public class PublicadorOutbox {
                 transporte.enviar(evento);
                 evento.marcarEnviado(relogio.instant());
                 enviados++;
+            } catch (EventoRejeitadoException e) {
+                evento.marcarFalhou(e.getMessage());
+                log.error("Evento rejeitado pelo destino, sem reenvio: eventId={} tipo={}: {}",
+                        evento.getId(), evento.getTipo(), e.getMessage());
             } catch (FalhaEnvioException e) {
                 var espera = backoff(evento.getTentativas() + 1);
                 evento.agendarNovaTentativa(e.getMessage(), agora.plus(espera));

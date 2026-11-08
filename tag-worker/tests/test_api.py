@@ -1,11 +1,14 @@
+import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from app.config import Configuracao
 from app.main import criar_app
+from tests.conftest import AUTORIZADO, PEDIDO_COCA, configuracao
 
 
-def cliente_sem_llm() -> TestClient:
-    return TestClient(criar_app(Configuracao(groq_api_key=None, _env_file=None)))
+def cliente_sem_llm(headers: dict[str, str] | None = AUTORIZADO) -> TestClient:
+    return TestClient(criar_app(configuracao(groq_api_key=None)), headers=headers)
 
 
 def test_classifica_com_palavras_chave_quando_nao_ha_chave():
@@ -36,5 +39,28 @@ def test_saude():
 
 
 def test_chave_vazia_conta_como_ausente():
-    assert Configuracao(groq_api_key="", _env_file=None).groq_api_key is None
-    assert Configuracao(groq_api_key="   ", _env_file=None).groq_api_key is None
+    assert configuracao(groq_api_key="").groq_api_key is None
+    assert configuracao(groq_api_key="   ").groq_api_key is None
+
+
+@pytest.mark.parametrize("autorizacao", [None, "Bearer token-errado", "Basic dXNlcjpzZW5oYQ==", "Bearer"])
+def test_classificar_exige_o_token_de_servico(autorizacao):
+    headers = {"Authorization": autorizacao} if autorizacao else None
+    with cliente_sem_llm(headers=headers) as cliente:
+        resposta = cliente.post("/classificar", json=PEDIDO_COCA)
+
+    assert resposta.status_code == 401
+    assert "www-authenticate" not in resposta.headers
+
+
+def test_saude_nao_exige_token():
+    with cliente_sem_llm(headers=None) as cliente:
+        assert cliente.get("/saude").status_code == 200
+
+
+@pytest.mark.parametrize("token", [None, "", "curto-demais"])
+def test_nao_sobe_sem_token_forte(token, monkeypatch):
+    monkeypatch.delenv("TAG_WORKER_TOKEN_SERVICO", raising=False)
+    valores = {} if token is None else {"tag_worker_token_servico": token}
+    with pytest.raises(ValidationError, match="(?i)tag_worker_token_servico"):
+        Configuracao(_env_file=None, **valores)

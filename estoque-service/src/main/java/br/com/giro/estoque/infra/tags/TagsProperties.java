@@ -8,6 +8,7 @@ import java.util.Objects;
 
 /**
  * @param workerUrl                  URL base do tag-worker
+ * @param token                      token de serviço que o worker exige ({@code Authorization: Bearer})
  * @param timeout                    timeout de conexão e leitura; estourou, segue sem tags
  * @param reclassificacaoHabilitada  liga o job que reclassifica produtos que ficaram sem tags
  * @param intervaloReclassificacao   pausa entre rodadas do job
@@ -16,6 +17,7 @@ import java.util.Objects;
 @ConfigurationProperties("tags")
 public record TagsProperties(
         URI workerUrl,
+        String token,
         Duration timeout,
         boolean reclassificacaoHabilitada,
         Duration intervaloReclassificacao,
@@ -23,6 +25,9 @@ public record TagsProperties(
 
     public TagsProperties {
         Objects.requireNonNull(workerUrl, "tags.worker-url é obrigatório");
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("tags.token é obrigatório: defina TAG_WORKER_TOKEN_SERVICO");
+        }
         Objects.requireNonNull(timeout, "tags.timeout é obrigatório");
         Objects.requireNonNull(intervaloReclassificacao, "tags.intervalo-reclassificacao é obrigatório");
         if (loteReclassificacao <= 0) {

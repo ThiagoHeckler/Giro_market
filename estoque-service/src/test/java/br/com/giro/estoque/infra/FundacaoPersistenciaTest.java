@@ -49,7 +49,8 @@ class FundacaoPersistenciaTest extends IntegracaoTest {
                 "V6__adiciona_saldo_por_lote.sql",
                 "V7__adiciona_controle_de_envio_ao_outbox.sql",
                 "V8__adiciona_categoria_ao_produto.sql",
-                "V9__cria_reposicao_expedida.sql");
+                "V9__cria_reposicao_expedida.sql",
+                "V10__adiciona_status_failed_ao_outbox.sql");
     }
 
     @Test

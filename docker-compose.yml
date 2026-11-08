@@ -41,6 +41,8 @@ services:
     environment:
       # Lida do .env (fora do git). Vazia: o worker usa o classificador por palavras-chave.
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      # Token que o worker exige em /classificar (o estoque manda). Sem ele o compose nem sobe.
+      TAG_WORKER_TOKEN_SERVICO: ${TAG_WORKER_TOKEN_SERVICO:?defina no .env (ver .env.example)}
     ports:
       - "${TAG_WORKER_PORTA:-18000}:8000"
     healthcheck:
@@ -62,6 +64,7 @@ services:
       # Segredos só do .env (fora do git); sem eles o compose nem sobe. Ver .env.example.
       ESTOQUE_TOKEN_SERVICO: ${ESTOQUE_TOKEN_SERVICO:?defina no .env (ver .env.example)}
       MERCADO_TOKEN_SERVICO: ${MERCADO_TOKEN_SERVICO:?defina no .env (ver .env.example)}
+      TAG_WORKER_TOKEN_SERVICO: ${TAG_WORKER_TOKEN_SERVICO:?defina no .env (ver .env.example)}
       OPERADOR_USUARIO: ${OPERADOR_USUARIO:?defina no .env (ver .env.example)}
       OPERADOR_SENHA: ${OPERADOR_SENHA:?defina no .env (ver .env.example)}
     ports:

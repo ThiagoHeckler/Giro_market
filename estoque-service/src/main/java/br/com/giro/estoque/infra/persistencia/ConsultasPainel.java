@@ -32,17 +32,22 @@ public class ConsultasPainel {
     /**
      * {@code skusSemSaldo} conta saldo expedível: SKU cujo saldo está zerado ou só em lotes vencidos,
      * que a expedição FEFO não envia. {@code lotesVencendo} são lotes com saldo que vencem nos próximos
-     * {@value #DIAS_ALERTA_VALIDADE} dias.
+     * {@value #DIAS_ALERTA_VALIDADE} dias. {@code eventosComFalha} são eventos da outbox que o destino recusou
+     * de vez ({@code FAILED}): não serão reenviados e pedem análise.
      */
-    public record Resumo(long skusCadastrados, long skusSemSaldo, long demandasAbertas, long lotesVencendo) {
+    public record Resumo(long skusCadastrados, long skusSemSaldo, long demandasAbertas, long lotesVencendo,
+                         long eventosComFalha) {
     }
 
     public record DemandaAberta(long id, String sku, String descricao, int qtdSolicitada, Instant registradoEm) {
     }
 
-    /** {@code entregueEm} nulo enquanto a {@code ReposicaoEnviada} ainda não chegou ao mercado. */
+    /**
+     * {@code entregueEm} nulo enquanto a {@code ReposicaoEnviada} ainda não chegou ao mercado;
+     * {@code entregaFalhou} quando o mercado recusou o evento e ele não será reenviado.
+     */
     public record ReposicaoRecente(UUID eventId, String sku, String descricao, int qtd, String codigoLote,
-                                   Instant expedidoEm, Instant entregueEm) {
+                                   Instant expedidoEm, Instant entregueEm, boolean entregaFalhou) {
     }
 
     public Resumo resumo() {
@@ -56,12 +61,13 @@ public class ConsultasPainel {
                                (SELECT count(*) FROM demanda_reprimida WHERE NOT atendida) AS demandas,
                                (SELECT count(*) FROM lote
                                  WHERE quantidade_disponivel > 0
-                                   AND validade BETWEEN :hoje AND :limite)                 AS vencendo
+                                   AND validade BETWEEN :hoje AND :limite)                 AS vencendo,
+                               (SELECT count(*) FROM outbox_event WHERE status = 'FAILED') AS falhas
                         """)
                 .param("hoje", hoje)
                 .param("limite", hoje.plusDays(DIAS_ALERTA_VALIDADE))
                 .query((linha, _) -> new Resumo(linha.getLong("skus"), linha.getLong("sem_saldo"),
-                        linha.getLong("demandas"), linha.getLong("vencendo")))
+                        linha.getLong("demandas"), linha.getLong("vencendo"), linha.getLong("falhas")))
                 .single();
     }
 
@@ -83,7 +89,8 @@ public class ConsultasPainel {
     /** Envios mais recentes primeiro, com o status de entrega do evento na outbox. */
     public List<ReposicaoRecente> reposicoesRecentes(int limite) {
         return jdbc.sql("""
-                        SELECT r.event_id, r.sku, p.descricao, r.qtd, l.codigo_lote, r.expedido_em, o.enviado_em
+                        SELECT r.event_id, r.sku, p.descricao, r.qtd, l.codigo_lote, r.expedido_em, o.enviado_em,
+                               o.status = 'FAILED' AS entrega_falhou
                         FROM reposicao_expedida r
                         JOIN produto_estoque p ON p.sku = r.sku
                         JOIN lote l ON l.id = r.lote_id
@@ -97,7 +104,7 @@ public class ConsultasPainel {
                     return new ReposicaoRecente(linha.getObject("event_id", UUID.class), linha.getString("sku"),
                             linha.getString("descricao"), linha.getInt("qtd"), linha.getString("codigo_lote"),
                             linha.getTimestamp("expedido_em").toInstant(),
-                            entregue == null ? null : entregue.toInstant());
+                            entregue == null ? null : entregue.toInstant(), linha.getBoolean("entrega_falhou"));
                 })
                 .list();
     }

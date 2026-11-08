@@ -19,3 +19,7 @@ __pycache__/
 
 # Ambiente
 .env
+
+# Ferramentas de agente (ruflo / claude-flow)
+.claude-flow/
+.swarm/

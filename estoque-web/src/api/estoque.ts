@@ -13,6 +13,8 @@ export interface Resumo {
   skusSemSaldo: number;
   demandasAbertas: number;
   lotesVencendo: number;
+  /** Eventos que o destino recusou de vez (dead-letter): não serão reenviados. */
+  eventosComFalha: number;
 }
 
 export interface DemandaAberta {
@@ -32,6 +34,8 @@ export interface ReposicaoRecente {
   expedidoEm: string;
   /** Nulo enquanto o evento ainda não foi entregue ao mercado. */
   entregueEm: string | null;
+  /** O mercado recusou o evento; ele não será reenviado. */
+  entregaFalhou: boolean;
 }
 
 export interface ProdutoEstoque {

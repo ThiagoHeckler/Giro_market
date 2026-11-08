@@ -4,6 +4,8 @@ import br.com.giro.mercado.DestinoFalso;
 import br.com.giro.mercado.IntegracaoTest;
 import br.com.giro.mercado.application.contrato.ReposicaoSolicitada;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -63,6 +65,55 @@ class PublicadorOutboxTest extends IntegracaoTest {
         assertThat(gravado.getTentativas()).isOne();
         assertThat(gravado.getUltimoErro()).hasValueSatisfying(erro -> assertThat(erro).contains("503"));
         assertThat(gravado.getProximaTentativaEm()).isAfter(Instant.now());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {400, 404, 409, 422})
+    void recusaDefinitivaVaiParaFailedSemReenvio(int status) {
+        var evento = registraEvento();
+        DestinoFalso.responderCom(status);
+
+        assertThat(publicador.publicarProntos()).isZero();
+
+        var gravado = eventos.findById(evento.eventId()).orElseThrow();
+        assertThat(gravado.getStatus()).isEqualTo(StatusOutbox.FAILED);
+        assertThat(gravado.getTentativas()).isOne();
+        assertThat(gravado.getUltimoErro()).hasValueSatisfying(erro -> assertThat(erro).contains(String.valueOf(status)));
+        assertThat(gravado.getEnviadoEm()).isEmpty();
+
+        // Mesmo com o destino de volta e o prazo de backoff vencido, não sai de novo.
+        DestinoFalso.responderCom(204);
+        jdbc.update("UPDATE outbox_event SET proxima_tentativa_em = now() - interval '1 hour'");
+        assertThat(publicador.publicarProntos()).isZero();
+        assertThat(DestinoFalso.recebidos()).hasSize(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {401, 403, 408, 429})
+    void quatroCentosTemporariosSeguemComBackoff(int status) {
+        var evento = registraEvento();
+        DestinoFalso.responderCom(status);
+
+        assertThat(publicador.publicarProntos()).isZero();
+
+        var gravado = eventos.findById(evento.eventId()).orElseThrow();
+        assertThat(gravado.getStatus()).isEqualTo(StatusOutbox.PENDING);
+        assertThat(gravado.getTentativas()).isOne();
+        assertThat(gravado.getProximaTentativaEm()).isAfter(Instant.now());
+    }
+
+    @Test
+    void eventoRejeitadoNaoTravaOsSeguintes() {
+        var rejeitado = registraEvento();
+        DestinoFalso.responderCom(400);
+        publicador.publicarProntos();
+
+        DestinoFalso.responderCom(204);
+        var seguinte = registraEvento();
+        assertThat(publicador.publicarProntos()).isOne();
+
+        assertThat(eventos.findById(rejeitado.eventId()).orElseThrow().getStatus()).isEqualTo(StatusOutbox.FAILED);
+        assertThat(eventos.findById(seguinte.eventId()).orElseThrow().getStatus()).isEqualTo(StatusOutbox.SENT);
     }
 
     @Test

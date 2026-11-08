@@ -10,8 +10,13 @@ import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Faz o papel do tag-worker: resposta, status e atraso configuráveis; conta as chamadas. */
+/**
+ * Faz o papel do tag-worker: resposta, status e atraso configuráveis; conta as chamadas.
+ * Como o worker real, recusa com 401 quem não manda o token dele.
+ */
 public final class WorkerFalso {
+
+    public static final String TOKEN = "token-do-worker-nos-testes-0123456789abcdef";
 
     public static final String CLASSIFICACAO_PADRAO = """
             {"tags":["refrigerante","coca cola","2l"],"categoria":"bebidas"}""";
@@ -37,9 +42,11 @@ public final class WorkerFalso {
                     ultimoContentType = troca.getRequestHeaders().getFirst("Content-Type");
                     CHAMADAS.incrementAndGet();
                     Thread.sleep(atraso);
-                    var bytes = corpo.getBytes(StandardCharsets.UTF_8);
+                    var autorizado = ("Bearer " + TOKEN).equals(troca.getRequestHeaders().getFirst("Authorization"));
+                    var bytes = (autorizado ? corpo : "{\"detail\":\"token de serviço ausente ou inválido\"}")
+                            .getBytes(StandardCharsets.UTF_8);
                     troca.getResponseHeaders().add("Content-Type", "application/json");
-                    troca.sendResponseHeaders(status, bytes.length);
+                    troca.sendResponseHeaders(autorizado ? status : 401, bytes.length);
                     troca.getResponseBody().write(bytes);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();

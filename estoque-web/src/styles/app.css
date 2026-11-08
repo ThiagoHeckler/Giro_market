@@ -218,7 +218,7 @@ input {
 
 .kpis {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-4);
   margin: 0;
 }
@@ -524,6 +524,11 @@ input {
   color: var(--color-brand-2-strong);
 }
 
+.selo--falhou {
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--color-surface-raised));
+  color: color-mix(in srgb, var(--color-danger) 70%, var(--color-ink));
+}
+
 /* ---- Estados --------------------------------------------------------------------------- */
 
 .estado {
@@ -566,6 +571,11 @@ input {
 @media (max-width: 1100px) {
   .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Cinco KPIs em duas colunas: o último ocupa a linha inteira em vez de deixar um buraco. */
+  .kpi:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 
   .colunas {
@@ -625,7 +635,7 @@ input {
     padding-inline: var(--space-4);
   }
 
-  /* Quatro números curtos: duas colunas cabem e poupam uma tela inteira de rolagem. */
+  /* Cinco números curtos: duas colunas cabem e poupam uma tela inteira de rolagem. */
   .kpis {
     gap: var(--space-3);
   }
